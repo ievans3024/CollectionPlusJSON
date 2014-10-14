@@ -7,7 +7,7 @@ from math import ceil
 MIMETYPE = 'application/vnd.collection+json'
 
 
-class CollectionPlusJSON(dict):
+class CollectionPlusJSON(UserDict):
 
     # TODO: Make this subclass a collection type with some fancy extras?
 
@@ -30,18 +30,6 @@ class CollectionPlusJSON(dict):
 
         __repr__ = __str__
 
-    def __contains__(self, item):
-        if item in self.collection:
-            return True
-        else:
-            return False
-
-    def __delitem__(self, key):
-        del self.collection[key]
-
-    def __getitem__(self, key):
-        return self.collection[key]
-
     def __init__(self, version=1.0, href='/api/', items=[], links=[], error={},
                  queries=[
                      {
@@ -54,7 +42,7 @@ class CollectionPlusJSON(dict):
                  template={
                      'data': []
                  }, **kwargs):
-        self.collection = {
+        collection = {
             'version': str(version),
             'href': href,
             'items': items,
@@ -63,19 +51,16 @@ class CollectionPlusJSON(dict):
             'template': template,
             'error': error
         }
-        self.collection = dict(self.collection, **kwargs)  # zip together standard collection + extended properties
+        collection = dict(collection, **kwargs)  # zip together standard collection + extended properties
         try:
             # Python 3
-            super().__init__(collection=self.collection)
+            super().__init__(**collection)
         except TypeError:
             # Python 2
-            super(CollectionPlusJSON, self).__init__(collection=self.collection)
-
-    def __setitem__(self, key, value):
-        self.collection[key] = value
+            super(CollectionPlusJSON, self).__init__(**collection)
 
     def __str__(self):
-        return json.dumps(self.__dict__)
+        return json.dumps({'collection': self.data})
 
     __repr__ = __str__
 
@@ -87,7 +72,7 @@ class CollectionPlusJSON(dict):
         :return:
         """
         item = CollectionPlusJSON.CollectionPlusJSONItem(uri=uri, **data)
-        self.collection.get('items').append(item)
+        self.data.get('items').append(item)
 
     def append_link(self, uri, rel, prompt):
         """
@@ -97,13 +82,7 @@ class CollectionPlusJSON(dict):
         :param prompt: The prompt to optionally display for this link.
         :return:
         """
-        self.collection.get('links').append({'href': uri, 'rel': rel, 'prompt': prompt})
-
-    def get(self, k, d=None):
-        if k in self.collection:
-            return self.collection[k]
-        else:
-            return d
+        self.data.get('links').append({'href': uri, 'rel': rel, 'prompt': prompt})
 
     def paginate(self, endpoint='', uri_template='{endpoint_uri}?page={page}&per_page={per_page}', page=1, per_page=5,
                  leading=2, trailing=2):
@@ -137,7 +116,7 @@ class CollectionPlusJSON(dict):
             if not per_page:
                 per_page = 5
 
-        number_of_pages = int(ceil(len(self.collection.get('items')) / per_page))
+        number_of_pages = int(ceil(len(self.data.get('items')) / per_page))
 
         if page > number_of_pages:
             page = number_of_pages
@@ -145,18 +124,17 @@ class CollectionPlusJSON(dict):
         page_index_begin = ((page * per_page) - per_page)
         page_index_end = (page * per_page)
 
-        self.collection['items'] = self.collection.get('items')[page_index_begin:page_index_end]
+        self.data['items'] = self.data.get('items')[page_index_begin:page_index_end]
 
         if page > 1:
             self.append_link(
-                uri_template.format(endpoint_uri=self.collection.get('href'), page=1, per_page=per_page),
+                uri_template.format(endpoint_uri=endpoint, page=1, per_page=per_page),
                 'first',
                 'First'
             )
 
             self.append_link(
-                uri_template.format(endpoint_uri=self.collection.get('href'), page=(page - 1),
-                                    per_page=per_page),
+                uri_template.format(endpoint_uri=endpoint, page=(page - 1), per_page=per_page),
                 'prev',
                 'Previous'
             )
@@ -172,15 +150,13 @@ class CollectionPlusJSON(dict):
                 page_num = page - lead_page
                 if page_num > 0:
                     self.append_link(
-                        uri_template.format(endpoint_uri=self.collection.get('href'), page=page_num,
-                                            per_page=per_page),
+                        uri_template.format(endpoint_uri=endpoint, page=page_num, per_page=per_page),
                         'more',
                         str(page_num)
                     )
 
         self.append_link(
-            uri_template.format(endpoint_uri=self.collection.get('href'), page=page,
-                                per_page=per_page),
+            uri_template.format(endpoint_uri=endpoint, page=page, per_page=per_page),
             'self',
             str(page)
         )
@@ -190,8 +166,7 @@ class CollectionPlusJSON(dict):
                 page_num = page + trail_page
                 if page_num < number_of_pages:
                     self.append_link(
-                        uri_template.format(endpoint_uri=self.collection.get('href'), page=page_num,
-                                            per_page=per_page),
+                        uri_template.format(endpoint_uri=endpoint, page=page_num, per_page=per_page),
                         'more',
                         str(page_num)
                     )
@@ -205,31 +180,29 @@ class CollectionPlusJSON(dict):
 
             if page < number_of_pages:
                 self.append_link(
-                    uri_template.format(endpoint_uri=self.collection.get('href'), page=page + 1,
-                                        per_page=per_page),
+                    uri_template.format(endpoint_uri=endpoint, page=page + 1, per_page=per_page),
                     'next',
                     'Next'
                 )
 
                 self.append_link(
-                    uri_template.format(endpoint_uri=self.collection.get('href'), page=number_of_pages,
-                                        per_page=per_page),
+                    uri_template.format(endpoint_uri=endpoint, page=number_of_pages, per_page=per_page),
                     'last',
                     'Last'
                 )
 
     def remove_links(self, operator='and', **kwargs):
         if operator.lower() == 'or':
-            if self.collection.get('links') is not None:
-                self.collection['links'] = [
-                    link for link in self.collection.get('links') if not bool(
+            if self.data.get('links') is not None:
+                self.data['links'] = [
+                    link for link in self.data.get('links') if not bool(
                         set(kwargs.items()).intersection(set(link.items()))
                     )
                 ]
         elif operator.lower() == 'and':
-            if self.collection.get('links') is not None:
-                self.collection['links'] = [
-                    link for link in self.collection.get('links') if not all(
+            if self.data.get('links') is not None:
+                self.data['links'] = [
+                    link for link in self.data.get('links') if not all(
                         link.get(k) == v for k, v in kwargs.items() if k in link
                     )
                 ]
