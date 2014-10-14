@@ -71,7 +71,7 @@ class CollectionPlusJSON(UserDict):
         :param data: This resource representation's data, as a dict or
         :return:
         """
-        item = CollectionPlusJSON.CollectionPlusJSONItem(uri=uri, **data)
+        item = self.CollectionPlusJSONItem(uri=uri, **data)
         self.data.get('items').append(item)
 
     def append_link(self, uri, rel, prompt):
