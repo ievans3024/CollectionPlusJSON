@@ -1,0 +1,8 @@
+PyCollection+JSON
+====
+A module for packaging data as the Collection+JSON hypermedia type, for use in RESTful APIs.
+
+This module provides a few classes and tools for structuring data to be packaged in JSON following the specification
+proposed by Mike Amundsen and registered with IANA. 
+
+For more information, see Mike Amundsen's [Collection+JSON page](http://amundsen.com/media-types/collection/)
