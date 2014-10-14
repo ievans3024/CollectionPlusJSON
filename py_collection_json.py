@@ -88,11 +88,11 @@ class CollectionPlusJSON(UserDict):
                  leading=2, trailing=2):
         """
         Paginate this collection, automatically trimming items and adding appropriate links for navigation.
+        :param endpoint: The URI for this resource.
         :param uri_template: A string providing a template for paginated URI structure. May include the following keys:
         "{endpoint_uri}" - This will evaluate to the value of the 'endpoint' param.
         "{page}" - The page number will be inserted here.
         "{per_page}" - The number of items to display per page will be inserted here.
-        :param endpoint: The URI for this resource.
         :param page: The desired page for this representation.
         :param per_page: The number of items per page for this representation.
         :param leading: The number of leading pages before "this" page to add to this collection's "links".
