@@ -4,14 +4,14 @@ import json
 from collections import UserDict
 from math import ceil
 
-COLLECTION_JSON = 'application/vnd.collection+json'
+MIMETYPE = 'application/vnd.collection+json'
 
 
 class CollectionPlusJSON(dict):
 
     # TODO: Make this subclass a collection type with some fancy extras?
 
-    mimetype = COLLECTION_JSON
+    mimetype = MIMETYPE
 
     class CollectionPlusJSONItem(UserDict):
 
