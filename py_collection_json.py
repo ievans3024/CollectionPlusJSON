@@ -1,8 +1,7 @@
 __author__ = 'Ian S. Evans'
 
 import json
-
-
+from collections import UserDict
 from math import ceil
 
 COLLECTION_JSON = 'application/vnd.collection+json'
@@ -14,44 +13,22 @@ class CollectionPlusJSON(dict):
 
     mimetype = COLLECTION_JSON
 
-    class CollectionPlusJSONItem(object):
-
-        def __contains__(self, item):
-            if item in self.data:
-                return True
-            else:
-                return False
-
-        def __delitem__(self, key):
-            del self.data[key]
-
-        def __getitem__(self, item):
-            return self.data[item]
+    class CollectionPlusJSONItem(UserDict):
 
         def __init__(self, uri=None, **kwargs):
             if uri is not None:
                 self.href = uri
-            self.data = kwargs
             try:
                 # Python 3
-                super().__init__(self.__dict__)
+                super().__init__(**kwargs)
             except TypeError:
                 # Python 2
-                super(CollectionPlusJSON.CollectionPlusJSONItem, self).__init__(self.__dict__)
-
-        def __setitem__(self, key, value):
-            self.data[key] = value
+                super(CollectionPlusJSON.CollectionPlusJSONItem, self).__init__(**kwargs)
 
         def __str__(self):
-            return json.dumps(self)
+            return json.dumps(self.__dict__)
 
         __repr__ = __str__
-
-        def get(self, k, d=None):
-            if k in self.data:
-                return self.data[k]
-            else:
-                return d
 
     def __contains__(self, item):
         if item in self.collection:
