@@ -6,6 +6,8 @@ from math import ceil
 
 MIMETYPE = 'application/vnd.collection+json'
 
+# TODO: Amend both classes to allow for easier conformity to Collection+JSON standard
+
 
 class CollectionPlusJSON(UserDict):
 
@@ -13,9 +15,11 @@ class CollectionPlusJSON(UserDict):
 
     class CollectionPlusJSONItem(UserDict):
 
-        def __init__(self, uri=None, **kwargs):
+        def __init__(self, uri=None, links=None, **kwargs):
             if uri is not None:
                 self.href = uri
+            if links is not None:
+                self.links = links
             try:
                 # Python 3
                 super().__init__(**kwargs)
@@ -29,26 +33,10 @@ class CollectionPlusJSON(UserDict):
         def __repr__(self):
             return self.__str__()
 
-    def __init__(self, version=1.0, href='/api/', items=[], links=[], error={},
-                 queries=[
-                     {
-                         'href': '/api/search/',
-                         'rel': 'search',
-                         'prompt': 'Find a specific entry',
-                         'data': [{'name': 'query', 'value': ''}]
-                     }
-                 ],
-                 template={
-                     'data': []
-                 }, **kwargs):
+    def __init__(self, version=1.0, href='/api/', **kwargs):
         collection = {
             'version': str(version),
             'href': href,
-            'items': items,
-            'links': links,
-            'queries': queries,
-            'template': template,
-            'error': error
         }
         collection = dict(collection, **kwargs)  # zip together standard collection + extended properties
         try:
@@ -72,9 +60,12 @@ class CollectionPlusJSON(UserDict):
         :return:
         """
         item = self.CollectionPlusJSONItem(uri=uri, **data)
-        self.data.get('items').append(item)
+        if self.data.get('items') is not None:
+            self.data.get('items').append(item)
+        else:
+            self.data['items'] = [item]
 
-    def append_link(self, uri, rel, prompt):
+    def append_link(self, uri, rel, **kwargs):
         """
         Append a link to this collection's 'links' property.
         :param uri: A string representing the link's URI.
@@ -82,7 +73,19 @@ class CollectionPlusJSON(UserDict):
         :param prompt: The prompt to optionally display for this link.
         :return:
         """
-        self.data.get('links').append({'href': uri, 'rel': rel, 'prompt': prompt})
+        link = {'href': uri, 'rel': rel}
+        link = dict(link, **kwargs)
+        if self.data.get('links') is not None:
+            self.data.get('links').append(link)
+        else:
+            self.data['links'] = [link]
+
+    def append_query(self, uri, rel, prompt, data):
+        query = {'href': uri, 'rel': rel, 'prompt': prompt, 'data': data}
+        if self.data.get('query') is not None:
+            self.data.get('query').append(query)
+        else:
+            self.data['query'] = [query]
 
     def paginate(self, endpoint='', uri_template='{endpoint_uri}?page={page}&per_page={per_page}', page=1, per_page=5,
                  leading=2, trailing=2):
