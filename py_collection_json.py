@@ -9,8 +9,6 @@ MIMETYPE = 'application/vnd.collection+json'
 
 class CollectionPlusJSON(UserDict):
 
-    # TODO: Make this subclass a collection type with some fancy extras?
-
     mimetype = MIMETYPE
 
     class CollectionPlusJSONItem(UserDict):
