@@ -26,7 +26,8 @@ class CollectionPlusJSON(UserDict):
         def __str__(self):
             return json.dumps(self.__dict__)
 
-        __repr__ = __str__
+        def __repr__(self):
+            return self.__str__()
 
     def __init__(self, version=1.0, href='/api/', items=[], links=[], error={},
                  queries=[
