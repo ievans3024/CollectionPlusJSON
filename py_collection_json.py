@@ -60,7 +60,8 @@ class CollectionPlusJSON(UserDict):
     def __str__(self):
         return json.dumps({'collection': self.data})
 
-    __repr__ = __str__
+    def __repr__(self):
+        return self.__str__()
 
     def append_item(self, uri, data):
         """
