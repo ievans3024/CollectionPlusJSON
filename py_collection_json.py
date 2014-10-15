@@ -6,19 +6,33 @@ from math import ceil
 
 MIMETYPE = 'application/vnd.collection+json'
 
-# TODO: Amend both classes to allow for easier conformity to Collection+JSON standard
-
 
 class CollectionPlusJSON(UserDict):
 
     mimetype = MIMETYPE
 
-    class Error(object):
-        pass
+    class BaseCollectionItem(object):
 
-    class Item(UserDict):
+        def __init__(self, *args, **kwargs):
+            pass
 
-        # TODO: Needs name, value, prompt support for 'data' property
+        def __str__(self):
+            return json.dumps(self.__dict__)
+
+        def __repr__(self):
+            return self.__str__()
+
+    class Error(BaseCollectionItem):
+
+        def __init__(self, title=None, code=None, message=None):
+            if title is not None:
+                self.title = title
+            if code is not None:
+                self.code = code
+            if message is not None:
+                self.message = message
+
+    class Item(UserDict, BaseCollectionItem):
 
         def __init__(self, uri=None, links=None, **kwargs):
             if uri is not None:
@@ -47,8 +61,17 @@ class CollectionPlusJSON(UserDict):
                 item_dict['data'] = data_list
             return json.dumps(item_dict)
 
-        def __repr__(self):
-            return self.__str__()
+    class Link(BaseCollectionItem):
+
+        def __init__(self, uri, rel, name=None, render=None, prompt=None):
+            self.uri = uri
+            self.rel = rel
+            if name is not None:
+                self.name = name
+            if render is not None:
+                self.render = render
+            if prompt is not None:
+                self.prompt = prompt
 
     class Query(Item):
 
@@ -94,50 +117,25 @@ class CollectionPlusJSON(UserDict):
     def __repr__(self):
         return self.__str__()
 
-    def append_item(self, uri, data):
-        """
-        Append an item to this collection's 'items' property.
-        :param uri: A string representing this resource's URI.
-        :param data: This resource representation's data, as a dict or
-        :return:
-        """
-        item = self.CollectionPlusJSONItem(uri=uri, **data)
-        if self.data.get('items') is not None:
-            self.data.get('items').append(item)
+    def __setitem__(self, key, value):
+        type_map = {
+            'links': self.Link,
+            'items': self.Item,
+            'queries': self.Query,
+            'template': self.Template,
+            'error': self.Error
+        }
+        if key in type_map.keys():
+            if not isinstance(value, type_map[key]):
+                raise TypeError(
+                    '{key} must be an instance of {classname}'.format(key=key, classname=str(type_map[key]))
+                )
+            if key in {'links', 'items', 'queries'}:
+                self.data[key].append(value)
+            else:
+                self.data[key] = value
         else:
-            self.data['items'] = [item]
-
-    def append_link(self, uri, rel, **kwargs):
-        """
-        Append a link to this collection's 'links' property.
-        :param uri: A string representing the link's URI.
-        :param rel: The link's relationship to this resource.
-        :param prompt: The prompt to optionally display for this link.
-        :return:
-        """
-        link = {'href': uri, 'rel': rel}
-        link = dict(link, **kwargs)
-        if self.data.get('links') is not None:
-            self.data.get('links').append(link)
-        else:
-            self.data['links'] = [link]
-
-    def append_query(self, uri, rel, prompt, data):
-        query = {'href': uri, 'rel': rel, 'prompt': prompt, 'data': data}
-        if self.data.get('query') is not None:
-            self.data.get('query').append(query)
-        else:
-            self.data['query'] = [query]
-
-    def error(self, title, code, message):
-        """
-        Set the error object for this collection.
-        :param title: The title string for the error.
-        :param code: The error code for the error.
-        :param message: The long-form message explaining the error and/or its meaning.
-        :return:
-        """
-        pass
+            self.data[key] = value
 
     def paginate(self, endpoint='', uri_template='{endpoint_uri}?page={page}&per_page={per_page}', page=1, per_page=5,
                  leading=2, trailing=2):
