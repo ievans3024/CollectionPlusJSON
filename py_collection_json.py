@@ -193,21 +193,3 @@ class CollectionPlusJSON(UserDict):
                     'last',
                     'Last'
                 )
-
-    def remove_links(self, operator='and', **kwargs):
-        if operator.lower() == 'or':
-            if self.data.get('links') is not None:
-                self.data['links'] = [
-                    link for link in self.data.get('links') if not bool(
-                        set(kwargs.items()).intersection(set(link.items()))
-                    )
-                ]
-        elif operator.lower() == 'and':
-            if self.data.get('links') is not None:
-                self.data['links'] = [
-                    link for link in self.data.get('links') if not all(
-                        link.get(k) == v for k, v in kwargs.items() if k in link
-                    )
-                ]
-        else:
-            raise ValueError('operator must be "and" or "or"')
