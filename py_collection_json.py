@@ -13,25 +13,72 @@ class CollectionPlusJSON(UserDict):
 
     mimetype = MIMETYPE
 
-    class CollectionPlusJSONItem(UserDict):
+    class Error(object):
+        pass
+
+    class Item(UserDict):
+
+        # TODO: Needs name, value, prompt support for 'data' property
 
         def __init__(self, uri=None, links=None, **kwargs):
             if uri is not None:
                 self.href = uri
             if links is not None:
                 self.links = links
+            for k, v in kwargs:
+                if not isinstance(v, str):
+                    if not hasattr(v, "__getitem__"):
+                        raise TypeError("{key} must have ")
+
             try:
                 # Python 3
                 super().__init__(**kwargs)
             except TypeError:
                 # Python 2
-                super(CollectionPlusJSON.CollectionPlusJSONItem, self).__init__(**kwargs)
+                super(CollectionPlusJSON.Item, self).__init__(**kwargs)
 
         def __str__(self):
-            return json.dumps(self.__dict__)
+            item_dict = dict(self.__dict__)
+            if self.data:
+                data_list = []
+                for k, v in self.data.items():
+                    to_append = {"name": k}
+                    if not isinstance(v, str):
+                        to_append["value"] = v[0]
+                        to_append["prompt"] = v[1]
+                    else:
+                        to_append['value'] = v
+                    data_list.append(to_append)
+                item_dict['data'] = data_list
+            return json.dumps(item_dict)
 
         def __repr__(self):
             return self.__str__()
+
+    class Query(Item):
+
+        def __init__(self, uri, rel=None, prompt=None, **kwargs):
+            self.uri = uri
+            if rel is not None:
+                self.rel = rel
+            if prompt is not None:
+                self.prompt = prompt
+            try:
+                # Python 3
+                super().__init__(**kwargs)
+            except TypeError:
+                # Python 2
+                super(CollectionPlusJSON.Query, self).__init__(**kwargs)
+
+    class Template(Item):
+
+        def __init__(self, **kwargs):
+            try:
+                # Python 3
+                super().__init__(**kwargs)
+            except TypeError:
+                # Python 2
+                super(CollectionPlusJSON.Template, self).__init__(**kwargs)
 
     def __init__(self, version=1.0, href='/api/', **kwargs):
         collection = {
@@ -86,6 +133,16 @@ class CollectionPlusJSON(UserDict):
             self.data.get('query').append(query)
         else:
             self.data['query'] = [query]
+
+    def error(self, title, code, message):
+        """
+        Set the error object for this collection.
+        :param title: The title string for the error.
+        :param code: The error code for the error.
+        :param message: The long-form message explaining the error and/or its meaning.
+        :return:
+        """
+        pass
 
     def paginate(self, endpoint='', uri_template='{endpoint_uri}?page={page}&per_page={per_page}', page=1, per_page=5,
                  leading=2, trailing=2):
