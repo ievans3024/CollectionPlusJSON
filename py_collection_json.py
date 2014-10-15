@@ -119,9 +119,9 @@ class CollectionPlusJSON(UserDict):
 
     def __setitem__(self, key, value):
         type_map = {
-            'links': self.Link,
-            'items': self.Item,
-            'queries': self.Query,
+            'links': list,
+            'items': list,
+            'queries': list,
             'template': self.Template,
             'error': self.Error
         }
@@ -130,12 +130,49 @@ class CollectionPlusJSON(UserDict):
                 raise TypeError(
                     '{key} must be an instance of {classname}'.format(key=key, classname=str(type_map[key]))
                 )
-            if key in {'links', 'items', 'queries'}:
-                self.data[key].append(value)
-            else:
-                self.data[key] = value
+        self.data[key] = value
+
+    def append_item(self, item):
+        """
+        Append an item to this collection's 'items' property.
+        :param item: The Item to append.
+        :return:
+        """
+        if not isinstance(item, self.Item):
+            raise TypeError('item must be an instance of {classname}'.format(classname=str(self.Item)))
         else:
-            self.data[key] = value
+            if self.data.get('items') is not None:
+                self.data.get('items').append(item)
+            else:
+                self.data['items'] = [item]
+
+    def append_link(self, link):
+        """
+        Append a link to this collection's 'links' property.
+        :param link: The Link to append.
+        :return:
+        """
+        if not isinstance(link, self.Link):
+            raise TypeError('item must be an instance of {classname}'.format(classname=str(self.Link)))
+        else:
+            if self.data.get('links') is not None:
+                self.data.get('links').append(link)
+            else:
+                self.data['links'] = [link]
+
+    def append_query(self, query):
+        """
+        Append a query to this collection's 'queries' property.
+        :param query: The Query to append.
+        :return:
+        """
+        if not isinstance(query, self.Query):
+            raise TypeError('item must be an instance of {classname}'.format(classname=str(self.Query)))
+        else:
+            if self.data.get('queries') is not None:
+                self.data.get('queries').append(query)
+            else:
+                self.data['queries'] = [query]
 
     def paginate(self, endpoint='', uri_template='{endpoint_uri}?page={page}&per_page={per_page}', page=1, per_page=5,
                  leading=2, trailing=2):
@@ -180,66 +217,66 @@ class CollectionPlusJSON(UserDict):
         self.data['items'] = self.data.get('items')[page_index_begin:page_index_end]
 
         if page > 1:
-            self.append_link(
+            self.append_link(self.Link(
                 uri_template.format(endpoint_uri=endpoint, page=1, per_page=per_page),
                 'first',
-                'First'
-            )
+                prompt='First'
+            ))
 
-            self.append_link(
+            self.append_link(self.Link(
                 uri_template.format(endpoint_uri=endpoint, page=(page - 1), per_page=per_page),
                 'prev',
-                'Previous'
-            )
+                prompt='Previous'
+            ))
 
             if page - leading > 0:
-                self.append_link(
+                self.append_link(self.Link(
                     '',
                     'skip',
-                    '&hellip;'
-                )
+                    prompt='&hellip;'
+                ))
 
             for lead_page in range(leading):
                 page_num = page - lead_page
                 if page_num > 0:
-                    self.append_link(
+                    self.append_link(self.Link(
                         uri_template.format(endpoint_uri=endpoint, page=page_num, per_page=per_page),
                         'more',
-                        str(page_num)
-                    )
+                        prompt=str(page_num)
+                    ))
 
-        self.append_link(
+        self.append_link(self.Link(
             uri_template.format(endpoint_uri=endpoint, page=page, per_page=per_page),
             'self',
-            str(page)
-        )
+            prompt=str(page)
+        ))
 
         if page < number_of_pages:
             for trail_page in range(1, trailing + 1):
                 page_num = page + trail_page
                 if page_num < number_of_pages:
-                    self.append_link(
+                    self.append_link(self.Link(
                         uri_template.format(endpoint_uri=endpoint, page=page_num, per_page=per_page),
                         'more',
-                        str(page_num)
-                    )
+                        prompt=str(page_num)
+                    ))
 
             if page + leading < number_of_pages:
-                self.append_link(
+                self.append_link(self.Link(
                     '',
                     'skip',
-                    '&hellip;'
-                )
+                    prompt='&hellip;'
+                ))
 
             if page < number_of_pages:
-                self.append_link(
+                self.append_link(self.Link(
                     uri_template.format(endpoint_uri=endpoint, page=page + 1, per_page=per_page),
                     'next',
-                    'Next'
-                )
+                    prompt='Next'
+                ))
 
-                self.append_link(
+                self.append_link(self.Link(
                     uri_template.format(endpoint_uri=endpoint, page=number_of_pages, per_page=per_page),
                     'last',
-                    'Last'
-                )
+                    prompt='Last'
+                ))
