@@ -25,11 +25,6 @@ class CollectionPlusJSON(UserDict):
                 self.href = uri
             if links is not None:
                 self.links = links
-            for k, v in kwargs:
-                if not isinstance(v, str):
-                    if not hasattr(v, "__getitem__"):
-                        raise TypeError("{key} must have ")
-
             try:
                 # Python 3
                 super().__init__(**kwargs)
