@@ -124,15 +124,15 @@ class CollectionPlusJSON(UserDict):
             'version': version,
             'href': href,
         }
-        # Using this method to invoke custom __setitem__ to verify types
-        for k, v in kwargs.items():
-            self[k] = v
         try:
             # Python 3
             super().__init__(**collection)
         except TypeError:
             # Python 2
             super(CollectionPlusJSON, self).__init__(**collection)
+        # Using this method to invoke custom __setitem__ to verify types
+        for k, v in kwargs.items():
+            self[k] = v
 
     def __str__(self):
         return json.dumps({'collection': self.data})
@@ -170,7 +170,7 @@ class CollectionPlusJSON(UserDict):
 
         self.data[key] = value
 
-    def append_item(self, item: CollectionPlusJSON.Item):
+    def append_item(self, item):
         """
         Append an item to this collection's 'items' property.
         :type item: CollectionPlusJSON.Item
@@ -185,7 +185,7 @@ class CollectionPlusJSON(UserDict):
             else:
                 self.data['items'] = [item]
 
-    def append_link(self, link: CollectionPlusJSON.Link):
+    def append_link(self, link):
         """
         Append a link to this collection's 'links' property.
         :type link: CollectionPlusJSON.Link
@@ -200,7 +200,7 @@ class CollectionPlusJSON(UserDict):
             else:
                 self.data['links'] = [link]
 
-    def append_query(self, query: CollectionPlusJSON.Query):
+    def append_query(self, query):
         """
         Append a query to this collection's 'queries' property.
         :type query: CollectionPlusJSON.Query
