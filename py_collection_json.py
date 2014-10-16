@@ -110,9 +110,18 @@ class CollectionPlusJSON(UserDict):
                 # Python 2
                 super(CollectionPlusJSON.Template, self).__init__(**kwargs)
 
-    def __init__(self, version=1.0, href='/api/', **kwargs):
+    def __init__(self, version: str="1.0", href: str="/api/", **kwargs):
+        """
+        CollectionPlusJSON constructor.
+        :type href: str
+        :type version: str
+        :param version: The CollectionPlusJSON standard being used, defaults to "1.0"
+        :param href: The api base URI, defaults to "/api/"
+        :param kwargs: Other properties to add, may include standard optional properties or extensions.
+        :return:
+        """
         collection = {
-            'version': str(version),
+            'version': version,
             'href': href,
         }
         # Using this method to invoke custom __setitem__ to verify types
@@ -139,16 +148,32 @@ class CollectionPlusJSON(UserDict):
             'template': self.Template,
             'error': self.Error
         }
+        list_content_types = {
+            'links': self.Link,
+            'items': self.Item,
+            'queries': self.Query
+        }
         if key in type_map.keys():
             if not isinstance(value, type_map[key]):
                 raise TypeError(
                     '{key} must be an instance of {classname}'.format(key=key, classname=str(type_map[key]))
                 )
+            if key in list_content_types.keys():
+                for item in value:
+                    if not isinstance(item, list_content_types[key]):
+                        raise TypeError(
+                            '{key}[{index}] is not an instance of {classname}'.format(
+                                key=key,
+                                index=value.index(item),
+                                classname=str(list_content_types[key]))
+                        )
+
         self.data[key] = value
 
-    def append_item(self, item):
+    def append_item(self, item: CollectionPlusJSON.Item):
         """
         Append an item to this collection's 'items' property.
+        :type item: CollectionPlusJSON.Item
         :param item: The Item to append.
         :return:
         """
@@ -160,9 +185,10 @@ class CollectionPlusJSON(UserDict):
             else:
                 self.data['items'] = [item]
 
-    def append_link(self, link):
+    def append_link(self, link: CollectionPlusJSON.Link):
         """
         Append a link to this collection's 'links' property.
+        :type link: CollectionPlusJSON.Link
         :param link: The Link to append.
         :return:
         """
@@ -174,9 +200,10 @@ class CollectionPlusJSON(UserDict):
             else:
                 self.data['links'] = [link]
 
-    def append_query(self, query):
+    def append_query(self, query: CollectionPlusJSON.Query):
         """
         Append a query to this collection's 'queries' property.
+        :type query: CollectionPlusJSON.Query
         :param query: The Query to append.
         :return:
         """
@@ -188,10 +215,16 @@ class CollectionPlusJSON(UserDict):
             else:
                 self.data['queries'] = [query]
 
-    def paginate(self, endpoint='', uri_template='{endpoint_uri}?page={page}&per_page={per_page}', page=1, per_page=5,
-                 leading=2, trailing=2):
+    def paginate(self, endpoint: str='', uri_template: str='{endpoint_uri}?page={page}&per_page={per_page}',
+                 page: int=1, per_page: int=5, leading: int=2, trailing: int=2):
         """
         Paginate this collection, automatically trimming items and adding appropriate links for navigation.
+        :type endpoint: str
+        :type uri_template: str
+        :type page: int
+        :type per_page: int
+        :type leading: int
+        :type trailing: int
         :param endpoint: The URI for this resource.
         :param uri_template: A string providing a template for paginated URI structure. May include the following keys:
         "{endpoint_uri}" - This will evaluate to the value of the 'endpoint' param.
