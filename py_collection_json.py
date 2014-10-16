@@ -35,6 +35,7 @@ class CollectionPlusJSON(UserDict):
                 # Python 3
                 super().__init__()
             except ValueError:
+                # Python 2
                 super(CollectionPlusJSON.Error, self).__init__()
 
     class Item(UserDict, BaseCollectionItem):
@@ -114,7 +115,9 @@ class CollectionPlusJSON(UserDict):
             'version': str(version),
             'href': href,
         }
-        collection = dict(collection, **kwargs)  # zip together standard collection + extended properties
+        # Using this method to invoke custom __setitem__ to verify types
+        for k, v in kwargs.items():
+            self[k] = v
         try:
             # Python 3
             super().__init__(**collection)
