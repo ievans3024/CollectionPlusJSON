@@ -36,50 +36,30 @@ def incorrect_standard_properties():
     set to a number of basic incorrect types.
     :return: True if not successfully instantiated, False if a TypeError is thrown
     """
-    to_return = False
-    try:
-        CollectionPlusJSON(links=None)
-        CollectionPlusJSON(links='')
-        CollectionPlusJSON(links={})
-        CollectionPlusJSON(links=())
-        CollectionPlusJSON(links=1)        
-    except TypeError:
-        to_return = True
-    try:
-        CollectionPlusJSON(items=None)
-        CollectionPlusJSON(items='')
-        CollectionPlusJSON(items={})
-        CollectionPlusJSON(items=())
-        CollectionPlusJSON(items=1)
-    except TypeError:
-        to_return = True
-    try:
-        CollectionPlusJSON(queries=None)
-        CollectionPlusJSON(queries='')
-        CollectionPlusJSON(queries={})
-        CollectionPlusJSON(queries=())
-        CollectionPlusJSON(queries=1)
-    except TypeError:
-        to_return = True
-    try:
-        CollectionPlusJSON(template=None)
-        CollectionPlusJSON(template='')
-        CollectionPlusJSON(template={})
-        CollectionPlusJSON(template=())
-        CollectionPlusJSON(template=1)
-        CollectionPlusJSON(template=[])
-    except TypeError:
-        to_return = True
-    try:
-        CollectionPlusJSON(error=None)
-        CollectionPlusJSON(error='')
-        CollectionPlusJSON(error={})
-        CollectionPlusJSON(error=())
-        CollectionPlusJSON(error=1)
-        CollectionPlusJSON(error=[])
-    except TypeError:
-        to_return = True
-    return to_return
+    args = ('links', 'items', 'queries', 'template')
+    test_values = (None, '', {}, (), 1)
+    for arg in args:
+        for value in test_values:
+            try:
+                CollectionPlusJSON(**{arg: value})
+            except TypeError:
+                pass
+            else:
+                print(
+                    'CollectionPlusJSON({arg}={value}) expected to raise TypeError but did not.'.format(
+                        arg=arg, value=str(value)
+                    )
+                )
+                return False
+        if arg == 'template':
+            try:
+                CollectionPlusJSON(template=[])
+            except TypeError:
+                pass
+            else:
+                print('CollectionPlusJSON(template=[]) expected to raise TypeError but did not.')
+                return False
+    return True
 
 assert default_init()
 assert correct_standard_properties()
