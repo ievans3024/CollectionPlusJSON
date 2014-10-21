@@ -236,6 +236,8 @@ class CollectionPlusJSON(UserDict):
         :param trailing: The number of trailing pages after "this" page to add to this collection's "links".
         :return:
         """
+        # TODO: Make this method copy out self.__dict__ and modify, then return JSON or new collection object
+
         if (type(page) is not int) or (type(per_page) is not int):
 
             try:

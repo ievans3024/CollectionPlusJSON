@@ -57,4 +57,11 @@ assert CollectionPlusJSON.Query == collection.Query
 assert CollectionPlusJSON.Template == collection.Template
 
 # Instance str and repr should appear to be the same
-assert str(collection) == repr(collection)
+assert str(collection) == repr(collection), """str and repr methods should return the same string"""
+
+# Paginate method should only make 0 or 1 of each: first, previous, next, last
+collection['items'] = [collection.Item() for i in range(1, 20)]
+collection.paginate()
+link_rels = [link.rel for link in collection['links']]
+for rel in ('first', 'previous', 'next', 'last'):
+    assert link_rels.count(rel) in {0, 1}, """more than 1 'rel="%s"' link exists in paginated document""" % rel
