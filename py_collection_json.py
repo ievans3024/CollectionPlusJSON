@@ -9,15 +9,14 @@ MIMETYPE = 'application/vnd.collection+json'
 
 class CollectionPlusJSON(UserDict):
 
+    # TODO: fix problem with JSON Serializability
+
     mimetype = MIMETYPE
 
-    class BaseCollectionItem(object):
-
-        def __init__(self, *args, **kwargs):
-            pass
+    class BaseCollectionItem(UserDict):
 
         def __str__(self):
-            return json.dumps(self.__dict__)
+            return json.dumps(self.data)
 
         def __repr__(self):
             return self.__str__()
@@ -33,12 +32,12 @@ class CollectionPlusJSON(UserDict):
                 self.message = message
             try:
                 # Python 3
-                super().__init__()
+                super().__init__(self.__dict__)
             except ValueError:
                 # Python 2
-                super(CollectionPlusJSON.Error, self).__init__()
+                super(CollectionPlusJSON.Error, self).__init__(self.__dict__)
 
-    class Item(UserDict, BaseCollectionItem):
+    class Item(BaseCollectionItem):
 
         def __init__(self, uri=None, links=None, **kwargs):
             if uri is not None:
@@ -53,18 +52,18 @@ class CollectionPlusJSON(UserDict):
                 super(CollectionPlusJSON.Item, self).__init__(**kwargs)
 
         def __str__(self):
-            item_dict = dict(self.__dict__)
+            item_dict = dict(**self.__dict__)
             if self.data:
                 data_list = []
                 for k, v in self.data.items():
                     to_append = {"name": k}
-                    if not isinstance(v, str):
+                    if hasattr(v, '__getitem__') and not isinstance(v, str):
                         to_append["value"] = v[0]
                         to_append["prompt"] = v[1]
                     else:
-                        to_append['value'] = v
+                        to_append["value"] = v
                     data_list.append(to_append)
-                item_dict['data'] = data_list
+                item_dict["data"] = data_list
             return json.dumps(item_dict)
 
     class Link(BaseCollectionItem):
@@ -80,10 +79,10 @@ class CollectionPlusJSON(UserDict):
                 self.prompt = prompt
             try:
                 # Python 3
-                super().__init__()
+                super().__init__(self.__dict__)
             except TypeError:
                 # Python 2
-                super(CollectionPlusJSON.Link, self).__init__()
+                super(CollectionPlusJSON.Link, self).__init__(self.__dict__)
 
     class Query(Item):
 
@@ -168,7 +167,7 @@ class CollectionPlusJSON(UserDict):
                                 classname=str(list_content_types[key]))
                         )
 
-        self.data[key] = value
+        super().__setitem__(key, value)
 
     def append_item(self, item):
         """
@@ -216,12 +215,11 @@ class CollectionPlusJSON(UserDict):
                 self.data['queries'] = [query]
 
     def paginate(self, endpoint: str='', uri_template: str='{endpoint_uri}?page={page}&per_page={per_page}',
-                 page: int=1, per_page: int=5, leading: int=2, trailing: int=2):
+                 per_page: int=5, leading: int=2, trailing: int=2):
         """
-        Paginate this collection, automatically trimming items and adding appropriate links for navigation.
+        Paginate this collection into a list of collections representing "pages" of this collection.
         :type endpoint: str
         :type uri_template: str
-        :type page: int
         :type per_page: int
         :type leading: int
         :type trailing: int
@@ -230,102 +228,96 @@ class CollectionPlusJSON(UserDict):
         "{endpoint_uri}" - This will evaluate to the value of the 'endpoint' param.
         "{page}" - The page number will be inserted here.
         "{per_page}" - The number of items to display per page will be inserted here.
-        :param page: The desired page for this representation.
         :param per_page: The number of items per page for this representation.
-        :param leading: The number of leading pages before "this" page to add to this collection's "links".
-        :param trailing: The number of trailing pages after "this" page to add to this collection's "links".
-        :return:
+        :param leading: The number of leading pages before a page to add to its "links".
+        :param trailing: The number of trailing pages after a page to add to its "links".
+        :return list: A list of CollectionPlusJSON instances representing this collection
         """
-        # TODO: Make this method copy out self.__dict__ and modify, then return JSON or new collection object
-
-        if (type(page) is not int) or (type(per_page) is not int):
-
-            try:
-                page = abs(int(page))
-            except (ValueError, TypeError):
-                page = 1
-
+        
+        if type(per_page) is not int:
             try:
                 per_page = abs(int(per_page))
             except (ValueError, TypeError):
                 per_page = 5
-
-            if not page:
-                page = 1
             if not per_page:
                 per_page = 5
 
+        pages = []
+        page = 1
         number_of_pages = int(ceil(len(self.data.get('items')) / per_page))
 
-        if page > number_of_pages:
-            page = number_of_pages
+        while page <= number_of_pages:
+            page_index_begin = ((page * per_page) - per_page)
+            page_index_end = (page * per_page)
+            new_page = CollectionPlusJSON(href=self.data.get('href'),
+                                          items=self.data.get('items')[page_index_begin:page_index_end])
 
-        page_index_begin = ((page * per_page) - per_page)
-        page_index_end = (page * per_page)
-
-        self.data['items'] = self.data.get('items')[page_index_begin:page_index_end]
-
-        if page > 1:
-            self.append_link(self.Link(
-                uri_template.format(endpoint_uri=endpoint, page=1, per_page=per_page),
-                'first',
-                prompt='First'
-            ))
-
-            self.append_link(self.Link(
-                uri_template.format(endpoint_uri=endpoint, page=(page - 1), per_page=per_page),
-                'prev',
-                prompt='Previous'
-            ))
-
-            if page - leading > 0:
-                self.append_link(self.Link(
-                    '',
-                    'skip',
-                    prompt='&hellip;'
+            if page > 1:
+                new_page.append_link(new_page.Link(
+                    uri_template.format(endpoint_uri=endpoint, page=1, per_page=per_page),
+                    'first',
+                    prompt='First'
                 ))
-
-            for lead_page in range(leading):
-                page_num = page - lead_page
-                if page_num > 0:
-                    self.append_link(self.Link(
-                        uri_template.format(endpoint_uri=endpoint, page=page_num, per_page=per_page),
-                        'more',
-                        prompt=str(page_num)
-                    ))
-
-        self.append_link(self.Link(
-            uri_template.format(endpoint_uri=endpoint, page=page, per_page=per_page),
-            'self',
-            prompt=str(page)
-        ))
-
-        if page < number_of_pages:
-            for trail_page in range(1, trailing + 1):
-                page_num = page + trail_page
-                if page_num < number_of_pages:
-                    self.append_link(self.Link(
-                        uri_template.format(endpoint_uri=endpoint, page=page_num, per_page=per_page),
-                        'more',
-                        prompt=str(page_num)
-                    ))
-
-            if page + leading < number_of_pages:
-                self.append_link(self.Link(
-                    '',
-                    'skip',
-                    prompt='&hellip;'
+    
+                new_page.append_link(new_page.Link(
+                    uri_template.format(endpoint_uri=endpoint, page=(page - 1), per_page=per_page),
+                    'prev',
+                    prompt='Previous'
                 ))
-
+    
+                if page - leading > 0:
+                    new_page.append_link(new_page.Link(
+                        '',
+                        'skip',
+                        prompt='&hellip;'
+                    ))
+    
+                for lead_page in range(leading):
+                    page_num = page - lead_page
+                    if page_num > 0:
+                        new_page.append_link(new_page.Link(
+                            uri_template.format(endpoint_uri=endpoint, page=page_num, per_page=per_page),
+                            'more',
+                            prompt=str(page_num)
+                        ))
+    
+            new_page.append_link(new_page.Link(
+                uri_template.format(endpoint_uri=endpoint, page=page, per_page=per_page),
+                'self',
+                prompt=str(page)
+            ))
+    
             if page < number_of_pages:
-                self.append_link(self.Link(
-                    uri_template.format(endpoint_uri=endpoint, page=page + 1, per_page=per_page),
-                    'next',
-                    prompt='Next'
-                ))
+                for trail_page in range(1, trailing + 1):
+                    page_num = page + trail_page
+                    if page_num < number_of_pages:
+                        new_page.append_link(new_page.Link(
+                            uri_template.format(endpoint_uri=endpoint, page=page_num, per_page=per_page),
+                            'more',
+                            prompt=str(page_num)
+                        ))
+    
+                if page + leading < number_of_pages:
+                    new_page.append_link(new_page.Link(
+                        '',
+                        'skip',
+                        prompt='&hellip;'
+                    ))
+    
+                if page < number_of_pages:
+                    new_page.append_link(new_page.Link(
+                        uri_template.format(endpoint_uri=endpoint, page=page + 1, per_page=per_page),
+                        'next',
+                        prompt='Next'
+                    ))
+    
+                    new_page.append_link(new_page.Link(
+                        uri_template.format(endpoint_uri=endpoint, page=number_of_pages, per_page=per_page),
+                        'last',
+                        prompt='Last'
+                    ))
 
-                self.append_link(self.Link(
-                    uri_template.format(endpoint_uri=endpoint, page=number_of_pages, per_page=per_page),
-                    'last',
-                    prompt='Last'
-                ))
+            pages.append(new_page)
+            page += 1
+
+        return tuple(pages)
