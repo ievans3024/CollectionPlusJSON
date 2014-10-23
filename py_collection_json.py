@@ -48,6 +48,12 @@ class CollectionPlusJSON(UserDict):
                 self.code = code
             if message is not None:
                 self.message = message
+            try:
+                # Python 3
+                super().__init__()
+            except TypeError:
+                # Python 2
+                super(CollectionPlusJSON.BaseCollectionItem, self).__init__()
 
     class Item(UserDict, BaseCollectionItem):
 
@@ -92,6 +98,12 @@ class CollectionPlusJSON(UserDict):
                 self.render = render
             if prompt is not None:
                 self.prompt = prompt
+            try:
+                # Python 3
+                super().__init__()
+            except TypeError:
+                # Python 2
+                super(CollectionPlusJSON.BaseCollectionItem, self).__init__()
 
     class Query(Item):
 
