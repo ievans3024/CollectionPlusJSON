@@ -8,3 +8,5 @@ proposed by Mike Amundsen and registered with IANA.
 For more information on the hypermedia type, see Mike Amundsen's [
 Collection+JSON page](http://amundsen.com/media-types/collection/)
 
+You can read a sparse documentation for this module [here
+](http://ievans3024.github.io/PyCollectionJSON/py_collection_json.html)
