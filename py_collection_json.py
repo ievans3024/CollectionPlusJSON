@@ -2,7 +2,7 @@ __author__ = 'Ian S. Evans'
 
 import json
 from collections import UserDict
-from math import ceil
+from math import ceil as _ceil
 
 MIMETYPE = 'application/vnd.collection+json'
 
@@ -253,7 +253,7 @@ class CollectionPlusJSON(UserDict):
 
         pages = []
         page = 1
-        number_of_pages = int(ceil(len(self.data.get('items')) / per_page))
+        number_of_pages = int(_ceil(len(self.data.get('items')) / per_page))
 
         while page <= number_of_pages:
             page_index_begin = ((page * per_page) - per_page)
