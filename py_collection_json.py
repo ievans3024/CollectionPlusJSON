@@ -9,17 +9,35 @@ MIMETYPE = 'application/vnd.collection+json'
 
 class CollectionPlusJSON(UserDict):
 
-    # TODO: fix problem with JSON Serializability
-
     mimetype = MIMETYPE
 
-    class BaseCollectionItem(UserDict):
+    class CollectionPlusJSONEncoder(json.JSONEncoder):
+
+        def default(self, o):
+            if isinstance(o, (
+                    CollectionPlusJSON.BaseCollectionItem,
+                    CollectionPlusJSON.Error,
+                    CollectionPlusJSON.Item,
+                    CollectionPlusJSON.Link,
+                    CollectionPlusJSON.Query,
+                    CollectionPlusJSON.Template
+            )):
+                return o.get_serializable()
+            return json.JSONEncoder.default(self, o)
+
+    class BaseCollectionItem(object):
+
+        def __init__(self):
+            pass
 
         def __str__(self):
-            return json.dumps(self.data)
+            return json.dumps(self.__dict__)
 
         def __repr__(self):
             return self.__str__()
+
+        def get_serializable(self):
+            return self.__dict__
 
     class Error(BaseCollectionItem):
 
@@ -30,14 +48,8 @@ class CollectionPlusJSON(UserDict):
                 self.code = code
             if message is not None:
                 self.message = message
-            try:
-                # Python 3
-                super().__init__(self.__dict__)
-            except ValueError:
-                # Python 2
-                super(CollectionPlusJSON.Error, self).__init__(self.__dict__)
 
-    class Item(BaseCollectionItem):
+    class Item(UserDict, BaseCollectionItem):
 
         def __init__(self, uri=None, links=None, **kwargs):
             if uri is not None:
@@ -52,6 +64,9 @@ class CollectionPlusJSON(UserDict):
                 super(CollectionPlusJSON.Item, self).__init__(**kwargs)
 
         def __str__(self):
+            return json.dumps(self.get_serializable())
+
+        def get_serializable(self):
             item_dict = dict(**self.__dict__)
             if self.data:
                 data_list = []
@@ -64,7 +79,7 @@ class CollectionPlusJSON(UserDict):
                         to_append["value"] = v
                     data_list.append(to_append)
                 item_dict["data"] = data_list
-            return json.dumps(item_dict)
+            return item_dict
 
     class Link(BaseCollectionItem):
 
@@ -77,12 +92,6 @@ class CollectionPlusJSON(UserDict):
                 self.render = render
             if prompt is not None:
                 self.prompt = prompt
-            try:
-                # Python 3
-                super().__init__(self.__dict__)
-            except TypeError:
-                # Python 2
-                super(CollectionPlusJSON.Link, self).__init__(self.__dict__)
 
     class Query(Item):
 
@@ -134,7 +143,7 @@ class CollectionPlusJSON(UserDict):
             self[k] = v
 
     def __str__(self):
-        return json.dumps({'collection': self.data})
+        return json.dumps({'collection': self.data}, cls=CollectionPlusJSON.CollectionPlusJSONEncoder)
 
     def __repr__(self):
         return self.__str__()

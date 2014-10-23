@@ -56,12 +56,25 @@ assert CollectionPlusJSON.Link == collection.Link
 assert CollectionPlusJSON.Query == collection.Query
 assert CollectionPlusJSON.Template == collection.Template
 
+# repr of CollectionPlusJSON instance should not raise a TypeError from json.dumps
+collection['links'] = [collection.Link(uri="/items/%d" % i, rel="more") for i in range(20)]
+repr(collection)
+del collection['links']
+
 # Instance str and repr should appear to be the same
 assert str(collection) == repr(collection), """str and repr methods should return the same string"""
 
-# Paginate method should only make 0 or 1 of each: first, previous, next, last
+# Paginate method should not have first, prev links on first page; next, last links on last page
 collection['items'] = [collection.Item() for i in range(1, 20)]
-collection.paginate()
-link_rels = [link.rel for link in collection['links']]
-for rel in ('first', 'previous', 'next', 'last'):
-    assert link_rels.count(rel) in {0, 1}, """more than 1 'rel="%s"' link exists in paginated document""" % rel
+collection_pages = collection.paginate()
+for page in collection_pages:
+    if collection_pages.index(page) == 0:
+        # First page should not have first or previous links
+        link_rels = [link.rel for link in page['links']]
+        if "first" in link_rels or "prev" in link_rels:
+            raise AssertionError("CollectionPlusJSON.paginate: First page has links before self")
+    if page == collection_pages[-1]:
+        # Last page should not have next or last links
+        link_rels = [link.rel for link in page['links']]
+        if "next" in link_rels or "last" in link_rels:
+            raise AssertionError("CollectionPlusJSON.paginate: Last page has links after self")
