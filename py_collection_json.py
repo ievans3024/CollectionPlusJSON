@@ -1,5 +1,5 @@
 __author__ = 'Ian S. Evans'
-__version__ = '0.0.1'
+__version__ = '0.0.2'
 
 import json
 from collections import UserDict
@@ -270,12 +270,13 @@ class CollectionPlusJSON(UserDict):
             else:
                 self.data['queries'] = [query]
 
-    def paginate(self, endpoint: str='', uri_template: str='{endpoint_uri}?page={page}&per_page={per_page}',
-                 per_page: int=5, leading: int=2, trailing: int=2):
+    def paginate(self, endpoint='', uri_template='{endpoint_uri}?page={page}&per_page={per_page}',
+                 page=None, per_page=5, leading=2, trailing=2):
         """
         Paginate this collection into a list of collections representing "pages" of this collection.
         :type endpoint: str
         :type uri_template: str
+        :type page: int
         :type per_page: int
         :type leading: int
         :type trailing: int
@@ -284,52 +285,60 @@ class CollectionPlusJSON(UserDict):
             "{endpoint_uri}" - This will evaluate to the value of the 'endpoint' param.
             "{page}" - The page number will be inserted here.
             "{per_page}" - The number of items to display per page will be inserted here.
+        :param page: The page number to get.
         :param per_page: The number of items per page for this representation.
         :param leading: The number of leading pages before a page to add to its "links".
         :param trailing: The number of trailing pages after a page to add to its "links".
-        :return list: A list of CollectionPlusJSON instances representing this collection
+        :return tuple: A tuple of CollectionPlusJSON instances representing ordered subsets of this collection. If the
+            page parameter is supplied, the tuple will contain a single CollectionPlusJSON instance representing one
+            particular subset ("page") from this collection.
+
         """
 
-        # TODO: re-add ability to get specific page
+        def sanitize_int(o, default=None):
+            if type(o) is not int:
+                try:
+                    number = abs(int(o))
+                except (ValueError, TypeError) as e:
+                    if default is not None:
+                        number = default
+                    else:
+                        raise e
+            else:
+                number = o
+            return number
 
-        if type(per_page) is not int:
-            try:
-                per_page = abs(int(per_page))
-            except (ValueError, TypeError):
-                per_page = 5
-            if not per_page:
-                per_page = 5
-
+        per_page = sanitize_int(per_page, default=5)
+        if page is not None:
+            page = sanitize_int(page, default=1)
         pages = []
-        page = 1
         number_of_pages = int(_ceil(len(self.data.get('items')) / per_page))
 
-        while page <= number_of_pages:
+        def assemble_page():
             page_index_begin = ((page * per_page) - per_page)
             page_index_end = (page * per_page)
             new_page = CollectionPlusJSON(href=self.data.get('href'),
                                           items=self.data.get('items')[page_index_begin:page_index_end])
-
             if page > 1:
                 new_page.append_link(new_page.Link(
                     uri_template.format(endpoint_uri=endpoint, page=1, per_page=per_page),
                     'first',
                     prompt='First'
                 ))
-    
+
                 new_page.append_link(new_page.Link(
                     uri_template.format(endpoint_uri=endpoint, page=(page - 1), per_page=per_page),
                     'prev',
                     prompt='Previous'
                 ))
-    
+
                 if page - leading > 0:
                     new_page.append_link(new_page.Link(
                         '',
                         'skip',
                         prompt='…'
                     ))
-    
+
                 for lead_page in range(leading, 0, -1):
                     page_num = page - lead_page
                     if page_num > 0 and page_num != page:
@@ -338,13 +347,13 @@ class CollectionPlusJSON(UserDict):
                             'more',
                             prompt=str(page_num)
                         ))
-    
+
             new_page.append_link(new_page.Link(
                 uri_template.format(endpoint_uri=endpoint, page=page, per_page=per_page),
                 'self',
                 prompt=str(page)
             ))
-    
+
             if page < number_of_pages:
                 for trail_page in range(1, trailing + 1):
                     page_num = page + trail_page
@@ -354,28 +363,33 @@ class CollectionPlusJSON(UserDict):
                             'more',
                             prompt=str(page_num)
                         ))
-    
+
                 if page + leading < number_of_pages:
                     new_page.append_link(new_page.Link(
                         '',
                         'skip',
                         prompt='…'
                     ))
-    
+
                 if page < number_of_pages:
                     new_page.append_link(new_page.Link(
                         uri_template.format(endpoint_uri=endpoint, page=page + 1, per_page=per_page),
                         'next',
                         prompt='Next'
                     ))
-    
+
                     new_page.append_link(new_page.Link(
                         uri_template.format(endpoint_uri=endpoint, page=number_of_pages, per_page=per_page),
                         'last',
                         prompt='Last'
                     ))
+            return new_page
 
-            pages.append(new_page)
-            page += 1
-
+        if page:
+            pages.append(assemble_page())
+        else:
+            page = 1
+            while page <= number_of_pages:
+                pages.append(assemble_page())
+                page += 1
         return tuple(pages)
