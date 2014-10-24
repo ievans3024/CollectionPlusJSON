@@ -327,7 +327,7 @@ class CollectionPlusJSON(UserDict):
                     new_page.append_link(new_page.Link(
                         '',
                         'skip',
-                        prompt='&hellip;'
+                        prompt='…'
                     ))
     
                 for lead_page in range(leading, 0, -1):
@@ -359,7 +359,7 @@ class CollectionPlusJSON(UserDict):
                     new_page.append_link(new_page.Link(
                         '',
                         'skip',
-                        prompt='&hellip;'
+                        prompt='…'
                     ))
     
                 if page < number_of_pages:
