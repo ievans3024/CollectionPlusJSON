@@ -8,10 +8,16 @@ MIMETYPE = 'application/vnd.collection+json'
 
 
 class CollectionPlusJSON(UserDict):
+    """
+    A class for organizing data to package in the Collection+JSON hypermedia type.
+    """
 
     mimetype = MIMETYPE
 
     class CollectionPlusJSONEncoder(json.JSONEncoder):
+        """
+        A custom extension for encoding CollectionPlusJSON data via the json module.
+        """
 
         def default(self, o):
             if isinstance(o, (
@@ -26,6 +32,9 @@ class CollectionPlusJSON(UserDict):
             return json.JSONEncoder.default(self, o)
 
     class BaseCollectionItem(object):
+        """
+        A base class for CollectionPlusJSON data, common methods
+        """
 
         def __init__(self):
             pass
@@ -37,9 +46,15 @@ class CollectionPlusJSON(UserDict):
             return self.__str__()
 
         def get_serializable(self):
+            """
+            Get a json-serializable representation of this data.
+            """
             return self.__dict__
 
     class Error(BaseCollectionItem):
+        """
+        A class for storing data representing the Collection+JSON error property.
+        """
 
         def __init__(self, title=None, code=None, message=None):
             if title is not None:
@@ -56,6 +71,9 @@ class CollectionPlusJSON(UserDict):
                 super(CollectionPlusJSON.BaseCollectionItem, self).__init__()
 
     class Item(UserDict, BaseCollectionItem):
+        """
+        A class for storing data representing an individual Collection+JSON Item (stored in the items property)
+        """
 
         def __init__(self, uri=None, links=None, **kwargs):
             if uri is not None:
@@ -73,6 +91,9 @@ class CollectionPlusJSON(UserDict):
             return json.dumps(self.get_serializable())
 
         def get_serializable(self):
+            """
+            Get this Item's data in a json serializable format
+            """
             item_dict = dict(**self.__dict__)
             if self.data:
                 data_list = []
@@ -88,6 +109,9 @@ class CollectionPlusJSON(UserDict):
             return item_dict
 
     class Link(BaseCollectionItem):
+        """
+        A class for storing data representing an individual Collection+JSON Link (stored in the links property)
+        """
 
         def __init__(self, uri, rel, name=None, render=None, prompt=None):
             self.uri = uri
@@ -106,6 +130,9 @@ class CollectionPlusJSON(UserDict):
                 super(CollectionPlusJSON.BaseCollectionItem, self).__init__()
 
     class Query(Item):
+        """
+        A class for storing data representing an individual Collection+JSON Query (stored in the queries property)
+        """
 
         def __init__(self, uri, rel=None, prompt=None, **kwargs):
             self.uri = uri
@@ -121,6 +148,9 @@ class CollectionPlusJSON(UserDict):
                 super(CollectionPlusJSON.Query, self).__init__(**kwargs)
 
     class Template(Item):
+        """
+        A class for storing data representing the Collection+JSON template property
+        """
 
         def __init__(self, **kwargs):
             try:
@@ -246,9 +276,9 @@ class CollectionPlusJSON(UserDict):
         :type trailing: int
         :param endpoint: The URI for this resource.
         :param uri_template: A string providing a template for paginated URI structure. May include the following keys:
-        "{endpoint_uri}" - This will evaluate to the value of the 'endpoint' param.
-        "{page}" - The page number will be inserted here.
-        "{per_page}" - The number of items to display per page will be inserted here.
+            "{endpoint_uri}" - This will evaluate to the value of the 'endpoint' param.
+            "{page}" - The page number will be inserted here.
+            "{per_page}" - The number of items to display per page will be inserted here.
         :param per_page: The number of items per page for this representation.
         :param leading: The number of leading pages before a page to add to its "links".
         :param trailing: The number of trailing pages after a page to add to its "links".
