@@ -101,8 +101,12 @@ class CollectionPlusJSON(UserDict):
                 for k, v in self.data.items():
                     to_append = {"name": k}
                     if hasattr(v, '__getitem__') and not isinstance(v, str):
-                        to_append["value"] = v[0]
-                        to_append["prompt"] = v[1]
+                        try:
+                            to_append["value"] = v[0]
+                            to_append["prompt"] = v[1]
+                        except IndexError:
+                            # TODO: debug and fix this
+                            raise IndexError(str(v) + " causing IndexError in Item.get_serializable.")
                     else:
                         to_append["value"] = v
                     data_list.append(to_append)
@@ -285,7 +289,10 @@ class CollectionPlusJSON(UserDict):
         :param trailing: The number of trailing pages after a page to add to its "links".
         :return list: A list of CollectionPlusJSON instances representing this collection
         """
-        
+
+        # TODO: re-add ability to get specific page
+        # TODO: page 2 links are first, prev, 2, 1, self, next, last; page 3 are f, p, 3, 2, self, n, l; etc.
+
         if type(per_page) is not int:
             try:
                 per_page = abs(int(per_page))
