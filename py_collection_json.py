@@ -99,16 +99,13 @@ class CollectionPlusJSON(UserDict):
             if self.data:
                 data_list = []
                 for k, v in self.data.items():
-                    to_append = {"name": k}
-                    if hasattr(v, '__getitem__') and not isinstance(v, str):
-                        try:
-                            to_append["value"] = v[0]
-                            to_append["prompt"] = v[1]
-                        except IndexError:
-                            # TODO: debug and fix this
-                            raise IndexError(str(v) + " causing IndexError in Item.get_serializable.")
-                    else:
-                        to_append["value"] = v
+                    # TODO: need to support prompt property
+                    # {"name": {"value": value, "prompt": prompt}, "name": {...}, etc.}
+                    # Need to make this work with __getitem__ and __setitem__
+                    to_append = {
+                        "name": k,
+                        "value": v
+                    }
                     data_list.append(to_append)
                 item_dict["data"] = data_list
             return item_dict
