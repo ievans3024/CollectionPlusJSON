@@ -162,7 +162,7 @@ class CollectionPlusJSON(UserDict):
                 # Python 2
                 super(CollectionPlusJSON.Template, self).__init__(**kwargs)
 
-    def __init__(self, version: str="1.0", href: str="/api/", **kwargs):
+    def __init__(self, version="1.0", href="/api/", **kwargs):
         """
         CollectionPlusJSON constructor.
         :type href: str
