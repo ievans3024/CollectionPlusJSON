@@ -37,9 +37,6 @@ class CollectionPlusJSON(UserDict):
         A base class for CollectionPlusJSON data, common methods
         """
 
-        def __init__(self):
-            pass
-
         def __str__(self):
             return json.dumps(self.__dict__)
 
@@ -71,9 +68,11 @@ class CollectionPlusJSON(UserDict):
                 # Python 2
                 super(CollectionPlusJSON.BaseCollectionItem, self).__init__()
 
-    class Item(UserDict, BaseCollectionItem):
+    class Item(BaseCollectionItem, UserDict):
         """
         A class for storing data representing an individual Collection+JSON Item (stored in the items property)
+        Item data may be assigned as Item[key] = value
+        Item data properties may be added as Item[key][prop_name] = prop_value (e.g. Item[key]["prompt"] = "A prompt"
         """
 
         def __init__(self, uri=None, links=None, **kwargs):
@@ -88,6 +87,9 @@ class CollectionPlusJSON(UserDict):
                 # Python 2
                 super(CollectionPlusJSON.Item, self).__init__(**kwargs)
 
+        def __setitem__(self, key, value):
+            super().__setitem__(key, {"value": value})
+
         def __str__(self):
             return json.dumps(self.get_serializable())
 
@@ -99,13 +101,10 @@ class CollectionPlusJSON(UserDict):
             if self.data:
                 data_list = []
                 for k, v in self.data.items():
-                    # TODO: need to support prompt property
-                    # {"name": {"value": value, "prompt": prompt}, "name": {...}, etc.}
-                    # Need to make this work with __getitem__ and __setitem__
-                    to_append = {
-                        "name": k,
-                        "value": v
-                    }
+                    to_append = {"name": k}
+                    for key in ("value", "prompt"):
+                        if v.get(key):
+                            to_append[key] = v[key]
                     data_list.append(to_append)
                 item_dict["data"] = data_list
             return item_dict

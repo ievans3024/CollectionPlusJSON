@@ -78,3 +78,12 @@ for page in collection_pages:
         link_rels = [link.rel for link in page['links']]
         if "next" in link_rels or "last" in link_rels:
             raise AssertionError("CollectionPlusJSON.paginate: Last page has links after self")
+
+# Item data should be accessible as {name: {"value": value, "prompt": prompt}, name: {...}, etc.}
+item = collection.Item(uri="/items/1")
+item["amount"] = 1.0
+item["amount"]["prompt"] = "$1.00"
+assert item.get("amount") == {"value": 1.0, "prompt": "$1.00"}
+
+# Item data str/repr should be [{"name": name, "value": value, "prompt": prompt}, {...}, etc.]
+assert '{"href": "/items/1", "data": [{"value": 1.0, "name": "amount", "prompt": "$1.00"}]}' == str(item) == repr(item)
