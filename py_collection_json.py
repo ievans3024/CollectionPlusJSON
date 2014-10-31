@@ -1,5 +1,5 @@
 __author__ = 'Ian S. Evans'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 import json
 from collections import UserDict
