@@ -41,19 +41,32 @@ class Serializable(object):
         return dumps(self, cls=self.Encoder)
 
     def get_serializable(self):
-        return self.__dict__
+        serializable = {}
+        for k, v in self.__dict__.items():
+            if v:
+                if isinstance(v, Serializable):
+                    serializable[k] = v.get_serializable()
+                else:
+                    serializable[k] = v
+        return serializable
 
 
 class Array(Serializable, Comparable, UserList):
 
-    def __init__(self, iterable, cls=object, *args, **kwargs):
-        super(Array, self).__init__(self, *args, **kwargs)
+    def __init__(self, iterable=[], cls=object, *args, **kwargs):
+        super(Array, self).__init__(self, iterable, *args, **kwargs)
         self.required_class = cls
         for item in iterable:
             if isinstance(item, cls):
                 self.data.append(item)
             else:
                 self.data.append(cls(**item))
+
+    def append(self, item):
+        if isinstance(item, self.required_class):
+            super(Array, self).append(item)
+        else:
+            raise TypeError("item must be an instance of {type}".format(type=self.required_class.__name__))
 
     def get_serializable(self):
         data = []
@@ -62,7 +75,7 @@ class Array(Serializable, Comparable, UserList):
                 data.append(item.get_serializable())
             else:
                 data.append(item)
-        return self.data
+        return data
     
     def __eq__(self, other):
         if type(self) == type(other) and \
@@ -90,8 +103,8 @@ class Collection(Serializable, Comparable):
     def mimetype(self):
         return self.__mimetype
 
-    def __init__(self, href=None, version="1.0", error=None, items=None,
-                 links=None, queries=None, template=None, **kwargs):
+    def __init__(self, href=None, version="1.0", error=None, items=[],
+                 links=[], queries=[], template=None, **kwargs):
         super(Collection, self).__init__(self)
         if not kwargs.get("from_json"):
             # Process like normal, apply restrictions to properties
@@ -100,19 +113,24 @@ class Collection(Serializable, Comparable):
             self.version = version
 
             if error and not isinstance(error, Error):
-                self.error = Error(**error)  # let the class raise exceptions if something's amiss
+                error = Error(**error)  # let the class raise exceptions if something's amiss
+                self.error = error
 
             if template and not isinstance(template, Template):
-                self.template = Template(**template)
+                template = Template(**template)
+                self.template = template
 
             if items and not isinstance(items, Array):
-                self.items = Array(items, cls=Item)
+                items = Array(items, cls=Item)
+            self.items = items
 
             if links and not isinstance(links, Array):
-                self.links = Array(links, cls=Link)
+                links = Array(links, cls=Link)
+            self.links = links
 
             if queries and not isinstance(queries, Array):
-                self.queries = Array(queries, cls=Query)
+                queries = Array(queries, cls=Query)
+            self.queries = queries
 
             for k, v in kwargs.items():
                 # let the user set whatever non-standard data
@@ -196,17 +214,19 @@ class Item(Serializable, Comparable):
     """
     { data, href, links }
     """
-    def __init__(self, href=None, data=None, links=None, **kwargs):
+    def __init__(self, href=None, data=[], links=[], **kwargs):
 
         super(Item, self).__init__()
 
         self.href = href
 
-        if data and not isinstance(data, Array):
-            self.data = Array(data, cls=Data)
+        if not isinstance(data, Array):
+            data = Array(data, cls=Data)
+        self.data = data
 
-        if links and not isinstance(links, Array):
-            self.links = Array(links, cls=Link)
+        if not isinstance(links, Array):
+            links = Array(links, cls=Link)
+        self.links = links
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
@@ -247,8 +267,9 @@ class Query(Serializable, Comparable):
         self.href = href
         self.rel = rel
 
-        if data and not isinstance(data, Array):
-            self.data = Array(data, cls=Data)
+        if not isinstance(data, Array):
+            data = Array(data, cls=Data)
+        self.data = data
 
         if name:
             self.name = name
@@ -269,7 +290,8 @@ class Template(Serializable, Comparable):
         super(Template, self).__init__()
 
         if not isinstance(data, Array):
-            self.data = Array(data, cls=Data)
+            data = Array(data, cls=Data)
+        self.data = data
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
