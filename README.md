@@ -2,6 +2,8 @@ CollectionPlusJSON
 ====
 Version: **0.0.4**
 
+[![Build Status](https://travis-ci.org/ievans3024/CollectionPlusJSON.svg?branch=master)](https://travis-ci.org/ievans3024/CollectionPlusJSON)
+
 A module for packaging data as the Collection+JSON hypermedia type, for use in RESTful APIs.
 
 This module provides a few classes and tools for structuring data to be packaged in JSON following the specification
