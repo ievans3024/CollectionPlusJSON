@@ -1,6 +1,6 @@
 CollectionPlusJSON
 ====
-Version: **0.0.3**
+Version: **0.0.4**
 
 A module for packaging data as the Collection+JSON hypermedia type, for use in RESTful APIs.
 
@@ -13,6 +13,11 @@ For more information on the hypermedia type, see Mike Amundsen's [Collection+JSO
 
 Changelog
 ====
+
+0.0.4
+----
+
+* Removed support for python 2 because subclassing list is harder than subclassing UserList
 
 0.0.3
 ----
