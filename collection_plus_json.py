@@ -150,19 +150,19 @@ class Collection(Serializable, Comparable):
             if not isinstance(value, Error):
                 value = Error(**value)
 
-        if key == "template":
+        elif key == "template":
             if not isinstance(value, Template):
                 value = Template(**value)
 
-        if key == "items":
+        elif key == "items":
             if not isinstance(value, Array):
                 value = Array(value, cls=Item)
 
-        if key == "links":
+        elif key == "links":
             if not isinstance(value, Array):
                 value = Array(value, cls=Link)
 
-        if key == "queries":
+        elif key == "queries":
             if not isinstance(value, Array):
                 value = Array(value, cls=Query)
 
@@ -178,12 +178,8 @@ class Data(Serializable, Comparable):
         super(Data, self).__init__()
 
         self.name = name
-
-        if prompt:
-            self.prompt = prompt
-
-        if value:
-            self.value = value
+        self.prompt = prompt
+        self.value = value
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
@@ -197,14 +193,9 @@ class Error(Serializable, Comparable):
 
         super(Error, self).__init__()
 
-        if code:
-            self.code = code
-
-        if message:
-            self.message = message
-
-        if title:
-            self.title = title
+        self.code = code
+        self.message = message
+        self.title = title
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
@@ -242,15 +233,9 @@ class Link(Serializable, Comparable):
 
         self.href = href
         self.rel = rel
-
-        if name:
-            self.name = name
-
-        if prompt:
-            self.prompt = prompt
-
-        if render:
-            self.render = render
+        self.name = name
+        self.prompt = prompt
+        self.render = render
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
@@ -266,16 +251,12 @@ class Query(Serializable, Comparable):
 
         self.href = href
         self.rel = rel
+        self.name = name
+        self.prompt = prompt
 
         if not isinstance(data, Array):
             data = Array(data, cls=Data)
         self.data = data
-
-        if name:
-            self.name = name
-
-        if prompt:
-            self.prompt = prompt
 
         for k, v in kwargs.items():
             self.__setattr__(k, v)
