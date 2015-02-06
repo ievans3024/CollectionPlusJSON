@@ -1,11 +1,203 @@
 __author__ = 'Ian S. Evans'
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
-import json
-from collections import UserDict
+from json import dumps, JSONEncoder, loads
+from collections import UserDict, UserList
 from math import ceil as _ceil
 
-MIMETYPE = 'application/vnd.collection+json'
+
+class Comparable(object):
+    # Stolen shamelessly from Ricardo Kirkner's bindings
+    # See https://github.com/ricardokirkner/collection-json.python
+
+    def __eq__(self, other):
+        if type(self) == type(other) and self.__dict__ == other.__dict__:
+            return True
+        return False
+
+    def __ne__(self, other):
+        if type(self) != type(other) or self.__dict__ != other.__dict__:
+            return True
+        return False
+
+
+class Serializable(object):
+
+    class Encoder(JSONEncoder):
+        def default(self, o):
+            if isinstance(o, Serializable):
+                return o.get_serializable()
+            return JSONEncoder.default(self, o)
+
+    def __init__(self, *args, **kwargs):
+        super(Serializable, self).__init__(*args, **kwargs)
+
+    def __str__(self):
+        return dumps(self, cls=self.Encoder)
+
+    def to_json(self):
+        return str(self)
+
+    def get_serializable(self):
+        return self.__dict__
+
+
+class Array(Serializable, Comparable, UserList):
+
+    def __init__(self, iterable, *args, cls=object, **kwargs):
+        super(Array, self).__init__(self, *args, **kwargs)
+        self.required_class = cls
+        for item in iterable:
+            if isinstance(item, cls):
+                self.data.append(item)
+            else:
+                raise ValueError("{obj} is not an instance of {cls}.".format(obj=repr(item), cls=cls.__name__))
+
+    def get_serializable(self):
+        data = []
+        for item in self.data:
+            if isinstance(item, Serializable):
+                data.append(item.get_serializable())
+            else:
+                data.append(item)
+        return self.data
+    
+    def __eq__(self, other):
+        if type(self) == type(other) and \
+                self.required_class == other.required_class and \
+                self.data == other.data:
+            return True
+        return False
+    
+    def __ne__(self, other):
+        if type(self) != type(other) or \
+                self.required_class != other.required_class or \
+                self.data != other.data:
+            return True
+        return False
+
+
+class Collection(Serializable, Comparable):
+    """
+    { error, href, items, links, queries, template, version }
+    """
+
+    mimetype = "application/vnd.collection+json"
+
+    def __init__(self, href=None, version="1.0", error=None, items=None,
+                 links=None, queries=None, template=None, **kwargs):
+        super(Collection, self).__init__(self)
+        if not kwargs.get("from_json"):
+            # Process like normal, apply restrictions to properties
+            # from the standard, allow non-standard properties
+            self.href = href
+            self.version = version
+
+            if not isinstance(error, Error):
+                error = Error(**error)  # let the class raise exceptions if something's amiss
+            self.error = error
+
+            if not isinstance(template, Template):
+                template = Template(**template)
+            self.template = template
+
+            if not isinstance(items, Array):
+                items = Array(items, cls=Item)
+            self.items = items
+
+            if not isinstance(links, Array):
+                links = Array(links, cls=Link)
+            self.links = links
+
+            if not isinstance(queries, Array):
+                queries = Array(queries, cls=Query)
+            self.queries = queries
+
+            for k, v in kwargs.items():
+                # let the user set whatever non-standard data
+                # no warranty, express or implied that non-standard
+                # data will behave correctly or as expected
+                self.__setattr__(k, v)
+
+        else:
+            # TODO: allow any kind of TextIO?
+            from_json = kwargs.get("from_json")
+            if isinstance(from_json, str):
+                self.__init__(**loads(kwargs.get("from_json")))
+
+    def __setattr__(self, key, value):
+
+        if key == "error":
+            if not isinstance(value, Error):
+                value = Error(**value)
+
+        if key == "template":
+            if not isinstance(value, Template):
+                value = Template(**value)
+
+        if key == "items":
+            if not isinstance(value, Array):
+                value = Array(value, cls=Item)
+
+        if key == "links":
+            if not isinstance(value, Array):
+                value = Array(value, cls=Link)
+
+        if key == "queries":
+            if not isinstance(value, Array):
+                value = Array(value, cls=Query)
+
+        super(Collection, self).__setattr__(key, value)
+
+    def __setitem__(self, key, value):
+
+        self.__setattr__(self, key, value)
+
+    def __getitem__(self, key):
+
+        return self.__getattribute__(key)
+
+
+class Data(Serializable, Comparable):
+    """
+    { name, prompt, value }
+    """
+    pass
+
+
+class Error(Serializable, Comparable):
+    """
+    { code, message, title }
+    """
+    pass
+
+
+class Item(Serializable, Comparable):
+    """
+    { data, href, links }
+    """
+    pass
+
+
+class Link(Serializable, Comparable):
+    """
+    { href, name, prompt, rel, render }
+    """
+    pass
+
+
+class Query(Serializable, Comparable):
+    """
+    { data, href, name, prompt, rel }
+    """
+    pass
+
+
+class Template(Serializable, Comparable):
+    """
+    { data }
+    """
+    pass
 
 
 class CollectionPlusJSON(UserDict):
@@ -13,9 +205,7 @@ class CollectionPlusJSON(UserDict):
     A class for organizing data to package in the Collection+JSON hypermedia type.
     """
 
-    mimetype = MIMETYPE
-
-    class CollectionPlusJSONEncoder(json.JSONEncoder):
+    class CollectionPlusJSONEncoder(JSONEncoder):
         """
         A custom extension for encoding CollectionPlusJSON data via the json module.
         """
@@ -30,7 +220,7 @@ class CollectionPlusJSON(UserDict):
                     CollectionPlusJSON.Template
             )):
                 return o.get_serializable()
-            return json.JSONEncoder.default(self, o)
+            return JSONEncoder.default(self, o)
 
     class BaseCollectionItem(object):
         """
@@ -41,7 +231,7 @@ class CollectionPlusJSON(UserDict):
             pass
 
         def __str__(self):
-            return json.dumps(self.__dict__)
+            return dumps(self.__dict__)
 
         def __repr__(self):
             return self.__str__()
@@ -89,7 +279,7 @@ class CollectionPlusJSON(UserDict):
                 super(CollectionPlusJSON.Item, self).__init__(**kwargs)
 
         def __str__(self):
-            return json.dumps(self.get_serializable())
+            return dumps(self.get_serializable())
 
         def get_serializable(self):
             """
@@ -187,7 +377,7 @@ class CollectionPlusJSON(UserDict):
             self[k] = v
 
     def __str__(self):
-        return json.dumps({'collection': self.data}, cls=CollectionPlusJSON.CollectionPlusJSONEncoder)
+        return dumps({'collection': self.data}, cls=CollectionPlusJSON.CollectionPlusJSONEncoder)
 
     def __repr__(self):
         return self.__str__()

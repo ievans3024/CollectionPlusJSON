@@ -1,6 +1,6 @@
 PyCollection+JSON
 ====
-Version: **0.0.2**
+Version: **0.0.3**
 
 A module for packaging data as the Collection+JSON hypermedia type, for use in RESTful APIs.
 
@@ -15,6 +15,11 @@ You can read a sparse documentation for this module [here
 
 Changelog
 ====
+
+0.0.3
+----
+
+* Complete rewrite based on some ideas from [Ricardo Kirkner's bindings](https://github.com/ricardokirkner/collection-json.python)
 
 0.0.2
 ----
