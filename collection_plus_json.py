@@ -168,6 +168,9 @@ class Collection(Serializable, Comparable):
 
         super(Collection, self).__setattr__(key, value)
 
+    def get_serializable(self):
+        return {"collection": super(Collection, self).get_serializable()}
+
 
 class Data(Serializable, Comparable):
     """
