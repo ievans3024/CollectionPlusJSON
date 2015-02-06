@@ -46,7 +46,7 @@ class Serializable(object):
 
 class Array(Serializable, Comparable, UserList):
 
-    def __init__(self, iterable, *args, cls=object, **kwargs):
+    def __init__(self, iterable, cls=object, *args, **kwargs):
         super(Array, self).__init__(self, *args, **kwargs)
         self.required_class = cls
         for item in iterable:
