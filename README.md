@@ -19,8 +19,7 @@ Changelog
 0.0.3
 ----
 
-* More bug fixing
-* Item data now stores name, value, prompt, and optionally, extended properties
+* Complete rewrite based on some ideas from [Ricardo Kirkner's bindings](https://github.com/ricardokirkner/collection-json.python)
 
 0.0.2
 ----
