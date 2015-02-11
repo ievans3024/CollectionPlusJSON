@@ -95,6 +95,18 @@ class Array(Serializable, Comparable, UserList):
         else:
             raise TypeError("item must be an instance of {type}".format(type=self.required_class.__name__))
 
+    def get_by(self, **kwargs):
+        items = []
+        for item in self.data:
+            for k, v in kwargs.items():
+                if (hasattr(item, k) or k in item) and getattr(item, k) == v:
+                    if item not in items:
+                        items.append(item)
+        if len(items) == 1:
+            return items[0]
+        else:
+            return items
+
     def get_serializable(self):
         data = []
         for item in self.data:
@@ -320,7 +332,7 @@ class Template(Serializable, RequiresProperties, Comparable):
     { data }
     """
 
-    __should__ = {"data": {"type": list, "truthy": False}}
+    __should__ = {"data": {"type": (list, UserList), "truthy": False}}
 
     def __init__(self, data=[], **kwargs):
 
