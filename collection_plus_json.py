@@ -23,6 +23,29 @@ class Comparable(object):
         return False
 
 
+class RequiresProperties(object):
+    """
+    Abstract class for classes that require certain properties to exist and be of certain types.
+    """
+
+    __should__ = {}
+
+    def __setattr__(self, key, value):
+        if key in self.__should__:
+            if not isinstance(value, self.__should__[key]["type"]):
+                raise TypeError(
+                    "The value of {k} must be a {type}.".format(
+                        cls=self.__class__.__name__, k=key, type=self.__should__[key]["type"].__name__
+                    )
+                )
+            if self.__should__[key]["truthy"]:
+                if not value:
+                    raise TypeError(
+                        "The value of {k} cannot evaluate to False.".format(cls=self.__class__.__name__, k=key)
+                    )
+        super(RequiresProperties, self).__setattr__(key, value)
+
+
 class Serializable(object):
 
     class Encoder(JSONEncoder):
@@ -35,7 +58,8 @@ class Serializable(object):
         super(Serializable, self).__init__()
 
     def __repr__(self):
-        return "<{classname} '{value}'>".format(classname=self.__class__.__name__, value=self.__str__())
+        value = " ".join(["{k}={v}".format(k=k, v=repr(v)) for k, v in self.__dict__.items()])
+        return "<{classname} {value}>".format(classname=self.__class__.__name__, value=value)
 
     def __str__(self):
         return dumps(self, cls=self.Encoder)
@@ -61,6 +85,9 @@ class Array(Serializable, Comparable, UserList):
                 self.data.append(item)
             else:
                 self.data.append(cls(**item))
+
+    def __repr__(self):
+        return UserList.__repr__(self)
 
     def append(self, item):
         if isinstance(item, self.required_class):
@@ -92,12 +119,16 @@ class Array(Serializable, Comparable, UserList):
         return False
 
 
-class Collection(Serializable, Comparable):
+class Collection(Serializable, RequiresProperties, Comparable):
     """
     { error, href, items, links, queries, template, version }
     """
 
     __mimetype = "application/vnd.collection+json"
+    __should__ = {
+        "href": {"type": str, "truthy": True},
+        "version": {"type": str, "truthy": True}
+    }
 
     @property
     def mimetype(self):
@@ -105,10 +136,11 @@ class Collection(Serializable, Comparable):
 
     def __init__(self, href=None, version="1.0", error=None, items=[],
                  links=[], queries=[], template=None, **kwargs):
-        super(Collection, self).__init__(self)
+        super(Collection, self).__init__()
         if not kwargs.get("from_json"):
             # Process like normal, apply restrictions to properties
             # from the standard, allow non-standard properties
+
             self.href = href
             self.version = version
 
@@ -172,10 +204,13 @@ class Collection(Serializable, Comparable):
         return {"collection": super(Collection, self).get_serializable()}
 
 
-class Data(Serializable, Comparable):
+class Data(Serializable, RequiresProperties, Comparable):
     """
     { name, prompt, value }
     """
+
+    __should__ = {"name": {"type": str, "truthy": True}}
+
     def __init__(self, name=None, prompt=None, value=None, **kwargs):
 
         super(Data, self).__init__()
@@ -204,10 +239,13 @@ class Error(Serializable, Comparable):
             self.__setattr__(k, v)
 
 
-class Item(Serializable, Comparable):
+class Item(Serializable, RequiresProperties, Comparable):
     """
     { data, href, links }
     """
+
+    __should__ = {"href": {"type": str, "truthy": True}}
+
     def __init__(self, href=None, data=[], links=[], **kwargs):
 
         super(Item, self).__init__()
@@ -226,10 +264,16 @@ class Item(Serializable, Comparable):
             self.__setattr__(k, v)
 
 
-class Link(Serializable, Comparable):
+class Link(Serializable, RequiresProperties, Comparable):
     """
     { href, name, prompt, rel, render }
     """
+
+    __should__ = {
+        "href": {"type": str, "truthy": True},
+        "rel": {"type": str, "truthy": True}
+    }
+
     def __init__(self, href=None, rel=None, name=None, prompt=None, render=None, **kwargs):
 
         super(Link, self).__init__()
@@ -244,10 +288,16 @@ class Link(Serializable, Comparable):
             self.__setattr__(k, v)
 
 
-class Query(Serializable, Comparable):
+class Query(Serializable, RequiresProperties, Comparable):
     """
     { data, href, name, prompt, rel }
     """
+
+    __should__ = {
+        "href": {"type": str, "truthy": True},
+        "rel": {"type": str, "truthy": True}
+    }
+
     def __init__(self, href=None, rel=None, data=None, name=None, prompt=None, **kwargs):
 
         super(Query, self).__init__()
@@ -265,10 +315,13 @@ class Query(Serializable, Comparable):
             self.__setattr__(k, v)
 
 
-class Template(Serializable, Comparable):
+class Template(Serializable, RequiresProperties, Comparable):
     """
     { data }
     """
+
+    __should__ = {"data": {"type": list, "truthy": False}}
+
     def __init__(self, data=[], **kwargs):
 
         super(Template, self).__init__()
