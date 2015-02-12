@@ -86,6 +86,20 @@ class Array(Serializable, Comparable, UserList):
             else:
                 self.data.append(cls(**item))
 
+    def __eq__(self, other):
+        if type(self) == type(other) and \
+                self.required_class == other.required_class and \
+                self.data == other.data:
+            return True
+        return False
+
+    def __ne__(self, other):
+        if type(self) != type(other) or \
+                self.required_class != other.required_class or \
+                self.data != other.data:
+            return True
+        return False
+
     def __repr__(self):
         return UserList.__repr__(self)
 
@@ -95,18 +109,6 @@ class Array(Serializable, Comparable, UserList):
         else:
             raise TypeError("item must be an instance of {type}".format(type=self.required_class.__name__))
 
-    def get_by(self, **kwargs):
-        items = []
-        for item in self.data:
-            for k, v in kwargs.items():
-                if (hasattr(item, k) or k in item) and getattr(item, k) == v:
-                    if item not in items:
-                        items.append(item)
-        if len(items) == 1:
-            return items[0]
-        else:
-            return items
-
     def get_serializable(self):
         data = []
         for item in self.data:
@@ -115,20 +117,6 @@ class Array(Serializable, Comparable, UserList):
             else:
                 data.append(item)
         return data
-    
-    def __eq__(self, other):
-        if type(self) == type(other) and \
-                self.required_class == other.required_class and \
-                self.data == other.data:
-            return True
-        return False
-    
-    def __ne__(self, other):
-        if type(self) != type(other) or \
-                self.required_class != other.required_class or \
-                self.data != other.data:
-            return True
-        return False
 
 
 class Collection(Serializable, RequiresProperties, Comparable):
