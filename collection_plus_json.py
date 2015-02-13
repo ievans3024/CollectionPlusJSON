@@ -86,6 +86,41 @@ class Array(Serializable, Comparable, UserList):
             else:
                 self.data.append(cls(**item))
 
+    def __add__(self, other):
+        if type(self) is type(other):
+            if self.required_class == other.required_class:
+                merged = self.data + other.data
+                return Array(merged, self.required_class)
+            else:
+                raise TypeError(
+                    "unsupported operand type(s) for +: 'Array[{self_type}]' and 'Array[{other_type}]'".format(
+                        self_type=self.required_class.__name__, other_type=other.required_class.__name__
+                    )
+                )
+        else:
+            raise TypeError(
+                "unsupported operand type(s) for +: 'Array' and '{other_type}'".format(other_type=type(other).__name__)
+            )
+
+    def __sub__(self, other):
+        if type(self) is type(other):
+            if self.required_class == other.required_class:
+                modified = []
+                for self_item in self.data:
+                    if self_item not in other.data:
+                        modified.append(self_item)
+                return Array(modified, self.required_class)
+            else:
+                raise TypeError(
+                    "unsupported operand type(s) for -: 'Array[{self_type}] and Array[{other_type}]'".format(
+                        self_type=self.required_class.__name__, other_type=other.required_class.__name__
+                    )
+                )
+        else:
+            raise TypeError(
+                "unsupported operand type(s) for -: 'Array' and '{other_type}'".format(other_type=type(other).__name__)
+            )
+
     def __eq__(self, other):
         if type(self) == type(other) and \
                 self.required_class == other.required_class and \
