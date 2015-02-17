@@ -4,6 +4,8 @@ __version__ = '0.0.4'
 from json import dumps, JSONEncoder, loads
 from collections import UserList
 
+MIMETYPE = "application/vnd.collection+json"
+
 
 class Comparable(object):
     # Stolen shamelessly from Ricardo Kirkner's bindings
@@ -159,7 +161,7 @@ class Collection(Serializable, RequiresProperties, Comparable):
     { error, href, items, links, queries, template, version }
     """
 
-    __mimetype = "application/vnd.collection+json"
+    __mimetype = MIMETYPE
     __should__ = {
         "href": {"type": str, "truthy": True},
         "version": {"type": str, "truthy": True}
