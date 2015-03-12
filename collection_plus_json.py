@@ -146,13 +146,17 @@ class Array(Serializable, Comparable, UserList):
         else:
             raise TypeError("item must be an instance of {type}".format(type=self.required_class.__name__))
 
-    def search(self, **kwargs):
-        results = []
+    def get(self, **kwargs):
+        """
+        Find the first contained object that matches certain criteria
+        :param kwargs: Keyword arguments for property name:value pairs to match
+        :returns: object The first contained object found to match all the criteria, None if no match.
+        """
         for obj in self.data:
-            has_items = all([v == obj.__dict__.get(k) for k, v in kwargs.items()])
-            if has_items:
-                results.append(obj)
-        return tuple(results)
+            matches = all([v == obj.__dict__.get(k) for k, v in kwargs.items()])
+            if matches:
+                return obj
+        return None
 
     def get_serializable(self):
         data = []
@@ -162,6 +166,19 @@ class Array(Serializable, Comparable, UserList):
             else:
                 data.append(item)
         return data
+
+    def search(self, **kwargs):
+        """
+        Search for all contained objects that match certain criteria
+        :param kwargs: Keyword arguments for property name:value pairs to match
+        :returns: tuple All of the objects that match the criteria
+        """
+        results = []
+        for obj in self.data:
+            has_items = all([v == obj.__dict__.get(k) for k, v in kwargs.items()])
+            if has_items:
+                results.append(obj)
+        return tuple(results)
 
 
 class Collection(Serializable, RequiresProperties, Comparable):
