@@ -146,6 +146,14 @@ class Array(Serializable, Comparable, UserList):
         else:
             raise TypeError("item must be an instance of {type}".format(type=self.required_class.__name__))
 
+    def search(self, **kwargs):
+        results = []
+        for obj in self.data:
+            has_items = all([v == obj.__dict__.get(k) for k, v in kwargs.items()])
+            if has_items:
+                results.append(obj)
+        return tuple(results)
+
     def get_serializable(self):
         data = []
         for item in self.data:
