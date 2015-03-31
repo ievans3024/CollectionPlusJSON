@@ -167,16 +167,27 @@ class Array(Serializable, Comparable, UserList):
                 data.append(item)
         return data
 
-    def search(self, **kwargs):
+    def search(self, operator, *args, **kwargs):
         """
         Search for all contained objects that match certain criteria
+        :param operator: Which logical operation to apply to search criteria (e.g. "and", "or")
+        :param args: Arguments for property names to match (regardless of value)
         :param kwargs: Keyword arguments for property name:value pairs to match
         :returns: tuple All of the objects that match the criteria
         """
+        operations = {
+            "and": all,
+            "or": any
+        }
+
+        if operator in operations:
+            op = operations[operator]
+
         results = []
         for obj in self.data:
-            has_items = all([v == obj.__dict__.get(k) for k, v in kwargs.items()])
-            if has_items:
+            has_props = op([k in obj.__dict__ for k in args])
+            has_items = op([v == obj.__dict__.get(k) for k, v in kwargs.items()])
+            if has_props or has_items:
                 results.append(obj)
         return tuple(results)
 
