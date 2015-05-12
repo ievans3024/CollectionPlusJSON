@@ -180,7 +180,7 @@ class Array(Serializable, Comparable, UserList):
             "or": any
         }
 
-        if operator in operations:
+        if str(operator).lower() in operations:
             op = operations[operator]
 
         results = []
