@@ -79,12 +79,11 @@ class CollectionArrayField(CollectionField):
         self.value = value
 
 
-
 class RequiresProperties(object):
     """
     Abstract class for classes that require certain properties to exist and be of certain types.
     """
-    # TODO: perhaps use descriptors instead?
+    # TODO: delete me once descriptors prove bug-free
 
     __should__ = {}
 
