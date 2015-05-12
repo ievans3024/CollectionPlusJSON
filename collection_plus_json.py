@@ -8,8 +8,11 @@ MIMETYPE = "application/vnd.collection+json"
 
 
 class Comparable(object):
-    # Stolen shamelessly from Ricardo Kirkner's bindings
-    # See https://github.com/ricardokirkner/collection-json.python
+    """
+    An object that needs to be comparable.
+    Stolen shamelessly from Ricardo Kirkner's bindings
+    See https://github.com/ricardokirkner/collection-json.python
+    """
 
     def __init__(self, *args, **kwargs):
         super(Comparable, self).__init__()
@@ -29,6 +32,7 @@ class RequiresProperties(object):
     """
     Abstract class for classes that require certain properties to exist and be of certain types.
     """
+    # TODO: perhaps use descriptors instead?
 
     __should__ = {}
 
@@ -49,6 +53,9 @@ class RequiresProperties(object):
 
 
 class Serializable(object):
+    """
+    An object that needs to be JSON serializable.
+    """
 
     class Encoder(JSONEncoder):
         def default(self, o):
@@ -78,6 +85,10 @@ class Serializable(object):
 
 
 class Array(Serializable, Comparable, UserList):
+    """
+    A serializable, comparable list-like object that contains objects of a certain type.
+    See: http://amundsen.com/media-types/collection/format/#arrays
+    """
 
     def __init__(self, iterable=[], cls=object, *args, **kwargs):
         super(Array, self).__init__(self, iterable, *args, **kwargs)
@@ -194,7 +205,8 @@ class Array(Serializable, Comparable, UserList):
 
 class Collection(Serializable, RequiresProperties, Comparable):
     """
-    { error, href, items, links, queries, template, version }
+    A dict-like object that contains a collection of information.
+    See: http://amundsen.com/media-types/collection/format/#objects-collection
     """
 
     __mimetype = MIMETYPE
@@ -274,12 +286,14 @@ class Collection(Serializable, RequiresProperties, Comparable):
         super(Collection, self).__setattr__(key, value)
 
     def get_serializable(self):
-        return {"collection": super(Collection, self).get_serializable()}
+        return {"collection": self.get_serializable()}
 
 
 class Data(Serializable, RequiresProperties, Comparable):
     """
-    { name, prompt, value }
+    A dict-like object that contains some objects representing information about another object.
+    Usually contained in an Array.
+    See: http://amundsen.com/media-types/collection/format/#arrays-data
     """
 
     __should__ = {"name": {"type": str, "truthy": True}}
@@ -298,7 +312,8 @@ class Data(Serializable, RequiresProperties, Comparable):
 
 class Error(Serializable, Comparable):
     """
-    { code, message, title }
+    A dict-like object containing error information.
+    See: http://amundsen.com/media-types/collection/format/#objects-error
     """
     def __init__(self, code=None, message=None, title=None, **kwargs):
 
@@ -314,7 +329,8 @@ class Error(Serializable, Comparable):
 
 class Item(Serializable, RequiresProperties, Comparable):
     """
-    { data, href, links }
+    A dict-like object containing information representing something.
+    http://amundsen.com/media-types/collection/format/#arrays-items
     """
 
     __should__ = {"href": {"type": str, "truthy": True}}
@@ -339,7 +355,9 @@ class Item(Serializable, RequiresProperties, Comparable):
 
 class Link(Serializable, RequiresProperties, Comparable):
     """
-    { href, name, prompt, rel, render }
+    A dict-like object containing information representing something as related to something else.
+    Usually contained in an Array.
+    See: http://amundsen.com/media-types/collection/format/#arrays-links
     """
 
     __should__ = {
@@ -363,7 +381,9 @@ class Link(Serializable, RequiresProperties, Comparable):
 
 class Query(Serializable, RequiresProperties, Comparable):
     """
-    { data, href, name, prompt, rel }
+    A dict-like object containing a form template related to the type of objects in the collection.
+    Usually contained in an Array.
+    See: http://amundsen.com/media-types/collection/format/#arrays-queries
     """
 
     __should__ = {
@@ -390,7 +410,8 @@ class Query(Serializable, RequiresProperties, Comparable):
 
 class Template(Serializable, RequiresProperties, Comparable):
     """
-    { data }
+    A dict-like object containing a template for objects in the containing collection.
+    See: http://amundsen.com/media-types/collection/format/#objects-template
     """
 
     __should__ = {"data": {"type": (list, UserList), "truthy": False}}
