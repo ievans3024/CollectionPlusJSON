@@ -28,6 +28,58 @@ class Comparable(object):
         return False
 
 
+class CollectionField(object):
+
+    def __init__(self, cls, truthy=False, nullable=True):
+        if type(cls) is not type:
+            raise TypeError("Parameter 'cls' must be a class.")
+        self.cls = cls
+        self.truthy = truthy
+        if not truthy:
+            self.nullable = nullable
+        else:
+            self.nullable = False
+        self.value = None
+
+    def __get__(self, obj, type=None):
+        return self.value
+
+    def __set__(self, obj, value):
+        if (not value) and self.truthy:
+            raise ValueError("Value must be truthy (cannot evaluate to False.)")
+        if (value is None) and (not self.nullable):
+            raise ValueError("Value cannot be None.")
+        if type(value) is not self.cls:
+            raise TypeError("Value must be an instance of {cls}".format(cls=self.cls.__name__))
+        self.value = value
+
+    def __delete__(self, obj):
+        if not self.nullable:
+            raise ValueError("Value cannot be deleted (cannot be None.)")
+        self.value = None
+
+
+class CollectionArrayField(CollectionField):
+
+    def __init__(self, cls, contains=object, truthy=False, nullable=True):
+        super().__init__(cls, truthy=truthy, nullable=nullable)
+        if type(contains) is not type:
+            raise TypeError("Parameter 'contains' must be a class.")
+        self.contains = contains
+
+    def __set__(self, obj, value):
+        if type(value) is not self.cls:
+            raise TypeError("Value must be an instance of {cls}".format(cls=self.cls.__name__))
+        if (not value) and self.truthy:
+            raise ValueError("Value must be truthy (cannot evaluate to False.)")
+        if (value is None) and (not self.nullable):
+            raise ValueError("Value cannot be None.")
+        if not all([type(i) is self.cls for i in value]):
+            raise TypeError("Value must contain instances of {cls}".format(cls=self.contains.__name__))
+        self.value = value
+
+
+
 class RequiresProperties(object):
     """
     Abstract class for classes that require certain properties to exist and be of certain types.
@@ -203,17 +255,27 @@ class Array(Serializable, Comparable, UserList):
         return tuple(results)
 
 
-class Collection(Serializable, RequiresProperties, Comparable):
+class Collection(Serializable, Comparable):
     """
     A dict-like object that contains a collection of information.
     See: http://amundsen.com/media-types/collection/format/#objects-collection
     """
 
     __mimetype = MIMETYPE
+
+    href = CollectionField(str, truthy=True)
+    version = CollectionField(str, truthy=True)
+    error = CollectionField(Error)
+    template = CollectionField(Template)
+    items = CollectionArrayField(Array, contains=Item)
+    links = CollectionArrayField(Array, contains=Link)
+    queries = CollectionArrayField(Array, contains=Query)
+    '''
     __should__ = {
         "href": {"type": str, "truthy": True},
         "version": {"type": str, "truthy": True}
     }
+    '''
 
     @property
     def mimetype(self):
@@ -262,6 +324,7 @@ class Collection(Serializable, RequiresProperties, Comparable):
                 self.__init__(**loads(kwargs.get("from_json")))
 
     def __setattr__(self, key, value):
+        # Let folks supply dicts or lists when setting collection attributes
 
         if key == "error":
             if not isinstance(value, Error):
@@ -289,14 +352,20 @@ class Collection(Serializable, RequiresProperties, Comparable):
         return {"collection": self.get_serializable()}
 
 
-class Data(Serializable, RequiresProperties, Comparable):
+class Data(Serializable, Comparable):
     """
     A dict-like object that contains some objects representing information about another object.
     Usually contained in an Array.
     See: http://amundsen.com/media-types/collection/format/#arrays-data
     """
 
+    name = CollectionField(str, truthy=True)
+    prompt = CollectionField(str)
+    value = CollectionField(object)
+
+    '''
     __should__ = {"name": {"type": str, "truthy": True}}
+    '''
 
     def __init__(self, name=None, prompt=None, value=None, **kwargs):
 
@@ -315,6 +384,11 @@ class Error(Serializable, Comparable):
     A dict-like object containing error information.
     See: http://amundsen.com/media-types/collection/format/#objects-error
     """
+
+    code = CollectionField(str)
+    message = CollectionField(str)
+    title = CollectionField(str)
+
     def __init__(self, code=None, message=None, title=None, **kwargs):
 
         super(Error, self).__init__()
@@ -327,13 +401,19 @@ class Error(Serializable, Comparable):
             self.__setattr__(k, v)
 
 
-class Item(Serializable, RequiresProperties, Comparable):
+class Item(Serializable, Comparable):
     """
     A dict-like object containing information representing something.
     http://amundsen.com/media-types/collection/format/#arrays-items
     """
 
+    href = CollectionField(str, truthy=True)
+    data = CollectionArrayField(Array, contains=Data)
+    links = CollectionArrayField(Array, contains=Link)
+
+    '''
     __should__ = {"href": {"type": str, "truthy": True}}
+    '''
 
     def __init__(self, href=None, data=[], links=[], **kwargs):
 
@@ -353,17 +433,25 @@ class Item(Serializable, RequiresProperties, Comparable):
             self.__setattr__(k, v)
 
 
-class Link(Serializable, RequiresProperties, Comparable):
+class Link(Serializable, Comparable):
     """
     A dict-like object containing information representing something as related to something else.
     Usually contained in an Array.
     See: http://amundsen.com/media-types/collection/format/#arrays-links
     """
 
+    href = CollectionField(str, truthy=True)
+    rel = CollectionField(str, truthy=True)
+    name = CollectionField(str)
+    prompt = CollectionField(str)
+    render = CollectionField(str)
+
+    '''
     __should__ = {
         "href": {"type": str, "truthy": True},
         "rel": {"type": str, "truthy": True}
     }
+    '''
 
     def __init__(self, href=None, rel=None, name=None, prompt=None, render=None, **kwargs):
 
@@ -379,17 +467,24 @@ class Link(Serializable, RequiresProperties, Comparable):
             self.__setattr__(k, v)
 
 
-class Query(Serializable, RequiresProperties, Comparable):
+class Query(Serializable, Comparable):
     """
     A dict-like object containing a form template related to the type of objects in the collection.
     Usually contained in an Array.
     See: http://amundsen.com/media-types/collection/format/#arrays-queries
     """
 
+    href = CollectionField(str, truthy=True)
+    rel = CollectionField(str, truthy=True)
+    name = CollectionField(str)
+    prompt = CollectionField(str)
+
+    '''
     __should__ = {
         "href": {"type": str, "truthy": True},
         "rel": {"type": str, "truthy": True}
     }
+    '''
 
     def __init__(self, href=None, rel=None, data=None, name=None, prompt=None, **kwargs):
 
@@ -408,13 +503,17 @@ class Query(Serializable, RequiresProperties, Comparable):
             self.__setattr__(k, v)
 
 
-class Template(Serializable, RequiresProperties, Comparable):
+class Template(Serializable, Comparable):
     """
     A dict-like object containing a template for objects in the containing collection.
     See: http://amundsen.com/media-types/collection/format/#objects-template
     """
 
+    data = CollectionArrayField(Array, contains=Data)
+
+    '''
     __should__ = {"data": {"type": (list, UserList), "truthy": False}}
+    '''
 
     def __init__(self, data=[], **kwargs):
 
