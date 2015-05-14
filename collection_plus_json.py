@@ -53,7 +53,7 @@ class CollectionField(object):
         if value is None:
             if not self.nullable:
                 raise ValueError("Value cannot be None.")
-        elif type(value) is not self.cls:
+        elif not isinstance(value, self.cls):
             raise TypeError("Value must be an instance of {cls}.".format(cls=self.cls.__name__))
         instance.__dict__[self.get_own_name(type(instance))] = value
 
@@ -82,9 +82,9 @@ class CollectionArrayField(CollectionField):
         if value is None:
             if not self.nullable:
                 raise ValueError("Value cannot be None.")
-        elif type(value) is not self.cls:
+        elif not isinstance(value, self.cls):
             raise TypeError("Value must be an instance of {cls}.".format(cls=self.cls.__name__))
-        if not all([type(i) is self.cls for i in value]):
+        if not all([isinstance(i, self.contains) for i in value]):
             raise TypeError("Value must contain instances of {cls}".format(cls=self.contains.__name__))
         instance.__dict__[self.get_own_name(type(instance))] = value
 
