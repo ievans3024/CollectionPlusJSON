@@ -32,7 +32,7 @@ class CollectionField(object):
 
     def __init__(self, cls, truthy=False, nullable=True):
         # have to double on type call to catch meta classes
-        if isinstance(cls, type):
+        if not isinstance(cls, type):
             raise TypeError("Parameter 'cls' must be a class. type(type(cls)) -> {cls}".format(cls=str(type(cls))))
         self.cls = cls
         self.truthy = truthy
@@ -72,7 +72,7 @@ class CollectionArrayField(CollectionField):
 
     def __init__(self, cls, contains=object, truthy=False, nullable=True):
         super().__init__(cls, truthy=truthy, nullable=nullable)
-        if isinstance(contains, type):
+        if not isinstance(contains, type):
             raise TypeError("Parameter 'contains' must be a class.")
         self.contains = contains
 
