@@ -502,7 +502,6 @@ class Collection(Serializable, Comparable):
                 self.__setattr__(k, v)
 
         else:
-            # TODO: allow any kind of TextIO?
             from_json = kwargs.get("from_json")
             if isinstance(from_json, str):
                 self.__init__(**loads(kwargs.get("from_json")))
