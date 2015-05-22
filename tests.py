@@ -6,8 +6,6 @@ from unittest import TestCase, TestSuite
 # TODO: write tests
 # TODO: write messages for assertions
 
-test_all = TestSuite()
-
 # Array tests
 class ArrayTests(TestCase):
 
@@ -143,3 +141,11 @@ class ArrayTests(TestCase):
 
 
 # Collection tests
+
+
+def test_all():
+    test_suite = TestSuite()
+    test_suite.addTest(ArrayTests('test_comparison'))
+    test_suite.addTest(ArrayTests('test_addition'))
+    test_suite.addTest(ArrayTests('test_subtraction'))
+    return test_suite
