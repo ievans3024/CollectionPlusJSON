@@ -17,18 +17,21 @@ class ArrayTests(TestCase):
 
         # Array(Type1) == Array(Type1) should be true if both
         # contain the same type of objects and their contents are the same
-        self.assertEqual(type1_array_1.required_class, type1_array_2.required_class)
-        self.assertEqual(type1_array_1.data, type1_array_2.data)
-        self.assertTrue(type1_array_1 == type1_array_2)
-        self.assertEqual(type1_array_1, type1_array_2)
+        self.assertEqual(type1_array_1.required_class, Array(['foo', 'bar', 'baz'], str).required_class)
+        self.assertEqual(type1_array_1.data, Array(['foo', 'bar', 'baz'], str).data)
+        self.assertTrue(type1_array_1 == Array(['foo', 'bar', 'baz'], str))
+        self.assertEqual(type1_array_1, Array(['foo', 'bar', 'baz'], str))
 
         # Array() != Array() should be True if
         #   1) each array contains a different type of object
         #   2) both arrays contain the same type of objects and
         #   their contents are not equal
         self.assertNotEqual(type1_array_1.required_class, type2_array_1.required_class)
+        self.assertNotEqual(type1_array_1.data, type1_array_2.data)
         self.assertNotEqual(type1_array_1.data, type2_array_1.data)
+        self.assertTrue(type1_array_1 != type1_array_2)
         self.assertTrue(type1_array_1 != type2_array_1)
+        self.assertNotEqual(type1_array_1, type1_array_2)
         self.assertNotEqual(type1_array_1, type2_array_1)
 
     def test_addition(self):
