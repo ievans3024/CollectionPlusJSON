@@ -130,10 +130,7 @@ class ArrayTests(TestCase):
             type1_array_1 - "this should fail"
 
     def test_serializable(self):
-        """
-        Array.get_serializable() should return an object
-        that can be dumped into a string with json.dumps.
-        """
+        """Array.get_serializable() should return an object that can be dumped into a string with json.dumps."""
 
         foo_array = Array(['foo', 'bar', 'baz'], str)
 
@@ -143,9 +140,7 @@ class ArrayTests(TestCase):
             self.fail(e)
 
     def test_string(self):
-        """
-        Array.__str__ must return a string formatted in a predictable way.
-        """
+        """Array.__str__ must return a string formatted in a predictable way."""
 
         foo_array = Array(['foo', 'bar', 'baz'], str)
 
