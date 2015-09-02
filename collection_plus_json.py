@@ -468,43 +468,37 @@ class Collection(Serializable, Comparable):
     def __init__(self, href=None, version="1.0", error=None, items=[],
                  links=[], queries=[], template=None, **kwargs):
         super(Collection, self).__init__()
-        if not kwargs.get("from_json"):
-            # Process like normal, apply restrictions to properties
-            # from the standard, allow non-standard properties
+        # Process like normal, apply restrictions to properties
+        # from the standard, allow non-standard properties
 
-            self.href = href
-            self.version = version
+        self.href = href
+        self.version = version
 
-            if error and not isinstance(error, Error):
-                error = Error(**error)  # let the class raise exceptions if something's amiss
-                self.error = error
+        if error and not isinstance(error, Error):
+            error = Error(**error)  # let the class raise exceptions if something's amiss
+            self.error = error
 
-            if template and not isinstance(template, Template):
-                template = Template(**template)
-                self.template = template
+        if template and not isinstance(template, Template):
+            template = Template(**template)
+            self.template = template
 
-            if items and not isinstance(items, Array):
-                items = Array(items, cls=Item)
-            self.items = items
+        if items and not isinstance(items, Array):
+            items = Array(items, cls=Item)
+        self.items = items
 
-            if links and not isinstance(links, Array):
-                links = Array(links, cls=Link)
-            self.links = links
+        if links and not isinstance(links, Array):
+            links = Array(links, cls=Link)
+        self.links = links
 
-            if queries and not isinstance(queries, Array):
-                queries = Array(queries, cls=Query)
-            self.queries = queries
+        if queries and not isinstance(queries, Array):
+            queries = Array(queries, cls=Query)
+        self.queries = queries
 
-            for k, v in kwargs.items():
-                # let the user set whatever non-standard data
-                # no warranty, express or implied that non-standard
-                # data will behave correctly or as expected
-                self.__setattr__(k, v)
-
-        else:
-            from_json = kwargs.get("from_json")
-            if isinstance(from_json, str):
-                self.__init__(**loads(kwargs.get("from_json")))
+        for k, v in kwargs.items():
+            # let the user set whatever non-standard data
+            # no warranty, express or implied that non-standard
+            # data will behave correctly or as expected
+            self.__setattr__(k, v)
 
     def __setattr__(self, key, value):
         # Let folks supply dicts or lists when setting collection attributes
