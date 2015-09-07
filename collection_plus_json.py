@@ -474,25 +474,30 @@ class Collection(Serializable, Comparable):
         self.href = href
         self.version = version
 
-        if error and not isinstance(error, Error):
-            error = Error(**error)  # let the class raise exceptions if something's amiss
-        self.error = error
+        if error:
+            if not isinstance(error, Error):
+                error = Error(**error)  # let the class raise exceptions if something's amiss
+            self.error = error
 
-        if template and not isinstance(template, Template):
-            template = Template(**template)
-        self.template = template
+        if template:
+            if not isinstance(template, Template):
+                template = Template(**template)
+            self.template = template
 
-        if items and not isinstance(items, Array):
-            items = Array(items, cls=Item)
-        self.items = items
+        if items:
+            if not isinstance(items, Array):
+                items = Array(items, cls=Item)
+            self.items = items
 
-        if links and not isinstance(links, Array):
-            links = Array(links, cls=Link)
-        self.links = links
+        if links:
+            if not isinstance(links, Array):
+                links = Array(links, cls=Link)
+            self.links = links
 
-        if queries and not isinstance(queries, Array):
-            queries = Array(queries, cls=Query)
-        self.queries = queries
+        if queries:
+            if not isinstance(queries, Array):
+                queries = Array(queries, cls=Query)
+            self.queries = queries
 
         for k, v in kwargs.items():
             # let the user set whatever non-standard data
