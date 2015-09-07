@@ -476,11 +476,11 @@ class Collection(Serializable, Comparable):
 
         if error and not isinstance(error, Error):
             error = Error(**error)  # let the class raise exceptions if something's amiss
-            self.error = error
+        self.error = error
 
         if template and not isinstance(template, Template):
             template = Template(**template)
-            self.template = template
+        self.template = template
 
         if items and not isinstance(items, Array):
             items = Array(items, cls=Item)
