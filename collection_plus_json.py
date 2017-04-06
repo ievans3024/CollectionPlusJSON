@@ -71,7 +71,7 @@ class CollectionField(object):
 class CollectionArrayField(CollectionField):
 
     def __init__(self, cls, contains=object, truthy=False, nullable=True):
-        super().__init__(cls, truthy=truthy, nullable=nullable)
+        super(CollectionArrayField, self).__init__(cls, truthy=truthy, nullable=nullable)
         if not isinstance(contains, type):
             raise TypeError("Parameter 'contains' must be a class.")
         self.contains = contains
@@ -151,7 +151,7 @@ class Array(Serializable, Comparable, UserList):
     See: http://amundsen.com/media-types/collection/format/#arrays
     """
 
-    def __init__(self, iterable=[], cls=object, *args, **kwargs):
+    def __init__(self, iterable=(), cls=object, *args, **kwargs):
         super(Array, self).__init__(self, iterable, *args, **kwargs)
         self.required_class = cls
         for item in iterable:
@@ -397,7 +397,7 @@ class Item(Serializable, Comparable):
     __should__ = {"href": {"type": str, "truthy": True}}
     '''
 
-    def __init__(self, href=None, data=[], links=[], **kwargs):
+    def __init__(self, href=None, data=(), links=(), **kwargs):
 
         super(Item, self).__init__()
 
@@ -427,7 +427,7 @@ class Template(Serializable, Comparable):
     __should__ = {"data": {"type": (list, UserList), "truthy": False}}
     '''
 
-    def __init__(self, data=[], **kwargs):
+    def __init__(self, data=(), **kwargs):
 
         super(Template, self).__init__()
 
@@ -465,8 +465,8 @@ class Collection(Serializable, Comparable):
     def mimetype(self):
         return self.__mimetype
 
-    def __init__(self, href=None, version="1.0", error=None, items=[],
-                 links=[], queries=[], template=None, **kwargs):
+    def __init__(self, href=None, version="1.0", error=None, items=(),
+                 links=(), queries=(), template=None, **kwargs):
         super(Collection, self).__init__()
         # Process like normal, apply restrictions to properties
         # from the standard, allow non-standard properties
